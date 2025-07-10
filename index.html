@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>ShipFit</title>
-  
   <style>
     body { font-family: 'Segoe UI', sans-serif; background: #f4f6f8; margin: 0; padding: 0; }
     header { background: #1976d2; color: white; padding: 20px 0; text-align: center; }
@@ -28,7 +27,7 @@
     .row-flex { display: flex; gap: 20px; }
     .row-flex .form-group { flex: 1; }
   </style>
-  </head>
+</head>
 <body onload="validatePassword()">
   <header>
     <img src="zrlogo.png" alt="Zeeland Refinery Logo">
@@ -69,7 +68,7 @@
           <input id="freeboard" type="number" step="0.01" placeholder="Max 14.4">
         </div>
         <div class="form-group">
-          <label for="manifold">Hoogte manifold  (8.24) [m]</label>
+          <label for="manifold">Hoogte manifold (8.24) [m]</label>
           <input id="manifold" type="number" step="0.01" placeholder="Max 16.4">
         </div>
         <div class="form-group">
@@ -95,6 +94,15 @@
     <div id="resultaten"></div>
   </div>
 <script>
+// Validate on load
+function validatePassword() {
+  const pw = prompt('Voer wachtwoord in om ShipFit te openen:');
+  if (pw !== '445501') {
+    alert('Onjuist wachtwoord. Toegang geweigerd.');
+    document.body.innerHTML = ''; return;
+  }
+}
+
 // Initialize records from localStorage
 let opgeslagenRecords = JSON.parse(localStorage.getItem('shipfitRecords')) || [];
 
@@ -116,13 +124,14 @@ function checkAfmeren() {
     ? '<div class="result-item result-ok">LOA binnen limieten</div>'
     : '<div class="result-item result-error">LOA buiten limieten (100-280m)</div>';
   resultaten.push(`<div class="row-flex">${pbHtml}${loaHtml}</div>`);
+
   // Controle FWD + AFT = Parallel body ±1m
   const sumDiff = Math.abs((fwd + aft) - pb);
   const sumCond = sumDiff <= 1;
   const sumHtml = sumCond
-    ? `<div class=\"result-item result-ok\">FWD + AFT komt overeen met Parallel body (verschil ${sumDiff.toFixed(2)} m)</div>`
-    : `<div class=\"result-item result-error\">FWD + AFT wijkt af van Parallel body (verschil ${sumDiff.toFixed(2)} m)</div>`;
-  resultaten.push(`<div class=\"row-flex\">${sumHtml}</div>`);
+    ? `<div class="result-item result-ok">FWD + AFT komt overeen met Parallel body (verschil ${sumDiff.toFixed(2)} m)</div>`
+    : `<div class="result-item result-error">FWD + AFT wijkt af van Parallel body (verschil ${sumDiff.toFixed(2)} m)</div>`;
+  resultaten.push(`<div class="row-flex">${sumHtml}</div>`);
 
   // Freeboard, Manifold, Deadweight
   const fbHtml = freeboard <= 14.4
@@ -151,7 +160,7 @@ function checkAfmeren() {
   ];
 
   // Render laadarmen PS
-  resultaten.push('<div class="arm-row">');
+  reacties.push('<div class="arm-row">');
   armenPS.forEach(a => {
     resultaten.push(`<div class="arm-block ${a.cond ? 'result-ok' : 'result-error'}">${a.arm}</div>`);
   });
@@ -185,7 +194,6 @@ function opslaanGegevens() {
   };
   opgeslagenRecords.push(record);
   localStorage.setItem('shipfitRecords', JSON.stringify(opgeslagenRecords));
-  
 }
 
 function zoekImoNummer() {
@@ -207,6 +215,7 @@ function zoekImoNummer() {
   document.getElementById('aft').value = rec.AFT;
   checkAfmeren();
 }
+
 </script>
 </body>
 </html>
