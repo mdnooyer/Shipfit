@@ -44,12 +44,12 @@
       </div>
       <div class="row-flex">
         <div class="form-group">
-          <label for="pbTotal">totaal parallel body (1.34) Ballast conditions [m]</label>
-          <input id="pbTotal" type="number" step="0.01" placeholder="Min 50">
+               <label for="loa">Length overall (1.27) [m]</label>
+          <input id="loa" type="number" step="0.01" placeholder="100-280">
         </div>
         <div class="form-group">
-          <label for="loa">Length overall (1.27) [m]</label>
-          <input id="loa" type="number" step="0.01" placeholder="100-280">
+            <label for="pbTotal">totaal parallel body (1.34) Ballast conditions [m]</label>
+          <input id="pbTotal" type="number" step="0.01" placeholder="Min 50">
         </div>
       </div>
       <div class="row-flex">
@@ -128,16 +128,16 @@
 
     // Laadarmen PS & SB
     const armenPS = [
-      { arm: 'Arm4-PS', cond: fwd > 28.35 && aft > 19.68 },
-      { arm: 'Arm5-PS', cond: fwd > 30.94 && aft > 17.09 },
-      { arm: 'Arm7-PS', cond: fwd > 36.58 && aft > 11.45 },
-      { arm: 'Arm8-PS', cond: fwd > 39.17 && aft > 8.86 }
+      { arm: 'Arm4-SB', cond: fwd > 28.35 && aft > 19.68 },
+      { arm: 'Arm5-SB', cond: fwd > 30.94 && aft > 17.09 },
+      { arm: 'Arm7-SB', cond: fwd > 36.58 && aft > 11.45 },
+      { arm: 'Arm8-SB', cond: fwd > 39.17 && aft > 8.86 }
     ];
     const armenSB = [
-      { arm: 'Arm4-SB', cond: fwd > 19.68 && aft > 28.35 },
-      { arm: 'Arm5-SB', cond: fwd > 17.09 && aft > 30.94 },
-      { arm: 'Arm7-SB', cond: fwd > 11.45 && aft > 36.58 },
-      { arm: 'Arm8-SB', cond: fwd > 8.86 && aft > 39.17 }
+      { arm: 'Arm4-PS', cond: fwd > 19.68 && aft > 28.35 },
+      { arm: 'Arm5-PS', cond: fwd > 17.09 && aft > 30.94 },
+      { arm: 'Arm7-PS', cond: fwd > 11.45 && aft > 36.58 },
+      { arm: 'Arm8-PS', cond: fwd > 8.86 && aft > 39.17 }
     ];
 
     // Render laadarmen PS
