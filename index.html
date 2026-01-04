@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 2.2 - Tugs & Offsets</title>
+  <title>ShipFit 2.3 - Flexibele Tugs</title>
   <style>
     :root {
       --primary: #1976d2;
@@ -15,7 +15,6 @@
       --success-text: #1b5e20;
       --error-bg: #ffebee;
       --error-text: #c62828;
-      --tug-color: #37474f; /* Donkergrijs/Blauw voor de sleepboot */
     }
 
     body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--text); }
@@ -65,10 +64,21 @@
     .offset-val { font-weight: bold; }
 
     /* Sleepboten Styles */
+    .tug-section { text-align: center; margin-top: 15px; }
     .tug-row { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 10px; }
     .tug-item { text-align: center; }
     .tug-svg { width: 100px; height: auto; display: block; }
     .tug-caption { font-size: 0.9rem; color: #555; margin-top: 5px; font-weight: 600; }
+    .tug-note { 
+      margin-top: 15px; 
+      padding: 10px; 
+      background-color: #fff8e1; 
+      border: 1px solid #ffecb3; 
+      color: #8d6e63; 
+      border-radius: 4px; 
+      font-size: 0.9rem; 
+      display: inline-block;
+    }
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @media (max-width: 600px) { .result-grid, .arm-row { flex-direction: column; } .result-grid { grid-template-columns: 1fr; } }
@@ -77,7 +87,7 @@
 <body onload="initApp()">
 
   <header>
-    <h1>ShipFit 2.2</h1>
+    <h1>ShipFit 2.3</h1>
   </header>
 
   <div class="container">
@@ -188,7 +198,6 @@
     }
   }
 
-  // --- HULPFUNCTIE VOOR SLEEPBOTEN SVG ---
   function getTugSVG(tonnage) {
     return `
     <svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg">
@@ -216,11 +225,8 @@
     html += '<div class="section-title">Controle Afmetingen</div><div class="result-grid">';
     html += (pb >= 50) ? `<div class="result-item result-ok">✓ Parallel body (${pb}m)</div>` : `<div class="result-item result-error">✕ Parallel body < 50m</div>`;
     html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA buiten limiet</div>`;
-    
     const sumDiff = Math.abs((fwd + aft) - pb);
-    html += (sumDiff <= 1) 
-      ? `<div class="result-item result-ok result-full">✓ Geometrie correct (Check: ${sumDiff.toFixed(2)}m)</div>` 
-      : `<div class="result-item result-error result-full">✕ Geometrie fout: FWD+AFT ≠ PB</div>`;
+    html += (sumDiff <= 1) ? `<div class="result-item result-ok result-full">✓ Geometrie correct</div>` : `<div class="result-item result-error result-full">✕ Geometrie fout</div>`;
     html += '</div>';
 
     // 2. Limieten
@@ -230,7 +236,7 @@
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ Deadweight</div>` : `<div class="result-item result-error">✕ Deadweight te hoog</div>`;
     html += '</div>';
 
-    // 3. Laadarmen Logica
+    // 3. Laadarmen
     const armConfig = [
       { name: 'Arm 4', reqFwd: 28.35, reqAft: 19.68 },
       { name: 'Arm 5', reqFwd: 30.94, reqAft: 17.09 },
@@ -251,14 +257,9 @@
         if (fwd > reqFwd && aft > reqAft) {
           const moveFwd = (aft - reqAft).toFixed(1);
           const moveAft = (fwd - reqFwd).toFixed(1);
-          output += `
-            <div class="arm-block result-ok">
-              <div class="arm-title">${arm.name}</div>
-              <div class="offset-info">
-                <div class="offset-line"><span>Max Vooruit:</span> <span class="offset-val">+${moveFwd}m</span></div>
-                <div class="offset-line"><span>Max Achteruit:</span> <span class="offset-val">+${moveAft}m</span></div>
-              </div>
-            </div>`;
+          output += `<div class="arm-block result-ok"><div class="arm-title">${arm.name}</div>
+            <div class="offset-info"><div class="offset-line"><span>Vooruit:</span><span class="offset-val">+${moveFwd}m</span></div>
+            <div class="offset-line"><span>Achteruit:</span><span class="offset-val">+${moveAft}m</span></div></div></div>`;
         } else {
            output += `<div class="arm-block result-error"><div class="arm-title">${arm.name}</div><div>Past niet</div></div>`;
         }
@@ -271,41 +272,39 @@
     html += renderArms('Bakboord (PS)');
     html += renderArms('Stuurboord (SB)');
 
-    // 4. Sleepboten (Tugboats) Logic
+    // 4. Sleepboten Logic (Updated for 90t total rule)
     html += '<div class="section-title">Vereiste Sleepboten</div>';
     
     let requiredTugs = [];
+    let tugNote = "";
     
-    // Logica op basis van LOA
     if (loa > 0) {
       if (loa < 125) {
-        // <125m: 2x 35t
         requiredTugs = [35, 35];
       } else if (loa >= 125 && loa < 150) {
-        // 125-150m: 1x 50t, 1x 40t
+        // Updated Logic for 125-150m
         requiredTugs = [50, 40];
+        tugNote = "<strong>Let op:</strong> Gezamenlijke Bollard Pull moet minimaal <strong>90 ton</strong> zijn.<br>(Bijv. 1x 39t en 1x 51t is ook toegestaan).";
       } else if (loa >= 150 && loa < 220) {
-        // 150-220m: 1x 60t, 2x 50t (Aanname 600 was 60)
         requiredTugs = [60, 50, 50];
       } else {
-        // >220m: 4x 60t
         requiredTugs = [60, 60, 60, 60];
       }
     }
 
     if (requiredTugs.length > 0) {
-      html += '<div class="tug-row">';
+      html += '<div class="tug-section"><div class="tug-row">';
       requiredTugs.forEach(tonnage => {
-        html += `
-          <div class="tug-item">
-            ${getTugSVG(tonnage)}
-            <div class="tug-caption">Bollard Pull</div>
-          </div>
-        `;
+        html += `<div class="tug-item">${getTugSVG(tonnage)}<div class="tug-caption">BP</div></div>`;
       });
       html += '</div>';
+      
+      if (tugNote) {
+        html += `<div class="tug-note">${tugNote}</div>`;
+      }
+      html += '</div>';
     } else {
-       html += '<div style="text-align:center; color:#777;">Vul LOA in om sleepboot requirements te zien.</div>';
+       html += '<div style="text-align:center; color:#777;">Vul LOA in.</div>';
     }
 
     const resDiv = document.getElementById('resultaten');
