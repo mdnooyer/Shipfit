@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 2.3 - Flexibele Tugs</title>
+  <title>ShipFit 2.4 - Tug Update</title>
   <style>
     :root {
       --primary: #1976d2;
@@ -87,7 +87,7 @@
 <body onload="initApp()">
 
   <header>
-    <h1>ShipFit 2.3</h1>
+    <h1>ShipFit 2.4</h1>
   </header>
 
   <div class="container">
@@ -272,7 +272,7 @@
     html += renderArms('Bakboord (PS)');
     html += renderArms('Stuurboord (SB)');
 
-    // 4. Sleepboten Logic (Updated for 90t total rule)
+    // 4. Sleepboten Logic
     html += '<div class="section-title">Vereiste Sleepboten</div>';
     
     let requiredTugs = [];
@@ -282,9 +282,9 @@
       if (loa < 125) {
         requiredTugs = [35, 35];
       } else if (loa >= 125 && loa < 150) {
-        // Updated Logic for 125-150m
         requiredTugs = [50, 40];
-        tugNote = "<strong>Let op:</strong> Gezamenlijke Bollard Pull moet minimaal <strong>90 ton</strong> zijn.<br>(Bijv. 1x 39t en 1x 51t is ook toegestaan).";
+        // Hier is de tekst aangepast:
+        tugNote = "<strong>Let op:</strong> Gezamenlijke Bollard Pull moet minimaal <strong>90 ton</strong> zijn.<br>(men mag afwijken naar minimaal 39 ton ipv 40).";
       } else if (loa >= 150 && loa < 220) {
         requiredTugs = [60, 50, 50];
       } else {
