@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 2.7 - Compact PDF</title>
+  <title>ShipFit 2.8 - Clean Filename</title>
   <style>
     :root {
       --primary: #1976d2;
@@ -80,9 +80,9 @@
        PRINT STYLES (PDF OPTIMIZATION)
        ========================================= */
     @media print {
-      @page { margin: 0.5cm; size: A4 portrait; } /* Smalle marges */
+      @page { margin: 0.5cm; size: A4 portrait; }
       
-      body { background: white; font-size: 11px; } /* Kleiner lettertype */
+      body { background: white; font-size: 11px; }
       .container { width: 100%; max-width: 100%; margin: 0; padding: 0; box-shadow: none; }
       
       header { padding: 10px 0; margin-bottom: 15px; }
@@ -92,7 +92,6 @@
       .buttons { display: none !important; }
       hr { display: none; }
 
-      /* Inputs omzetten naar compacte tekstweergave */
       .row-flex { gap: 10px; margin-bottom: 5px; display: grid; grid-template-columns: repeat(3, 1fr); }
       .row-flex:first-of-type { grid-template-columns: 1fr 1fr; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
       
@@ -103,20 +102,16 @@
         height: auto;
       }
       
-      /* Secties samenvoegen/verkleinen */
       .section-title { margin-top: 15px; margin-bottom: 5px; font-size: 1rem; border-color: #ccc; }
       
-      /* Grid naar 3 kolommen voor resultaten om hoogte te besparen */
       .result-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
       .result-item { padding: 4px 8px; font-size: 0.8rem; border-width: 1px; }
       
-      /* Laadarmen compacter */
       .arm-container { margin-top: 10px; }
       .arm-block { min-height: 50px; padding: 5px; border: 1px solid #ccc; }
       .arm-title { font-size: 0.85rem; }
       
-      /* Sleepboten kleiner */
-      .tug-svg { width: 50px; } /* Veel kleiner op PDF */
+      .tug-svg { width: 50px; }
       .tug-caption { font-size: 0.7rem; }
       .tug-note { padding: 4px; font-size: 0.75rem; margin-top: 5px; }
     }
@@ -126,7 +121,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Zeeland Refinery Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 2.7</h1>
+    <h1>ShipFit 2.8</h1>
   </header>
 
   <div class="container">
@@ -250,8 +245,8 @@
     const imo = document.getElementById('imo').value || '';
     const oldTitle = document.title;
     
-    // Naam instellen voor het bestand
-    document.title = `ShipFit_${shipName}_${imo}`;
+    // NAAM AANGEPAST: Geen ShipFit prefix meer
+    document.title = `${shipName}_${imo}`;
     
     window.print();
     
