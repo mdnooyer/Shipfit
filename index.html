@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 2.5 - Met Logo</title>
+  <title>ShipFit 2.6 - PDF Export</title>
   <style>
     :root {
       --primary: #1976d2;
@@ -19,29 +19,23 @@
 
     body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--text); }
     
-    /* HEADER STYLES AANGEPAST VOOR LOGO */
     header { 
       background: var(--primary); 
       color: white; 
       padding: 15px 0; 
       text-align: center; 
       box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
-      /* Zorgt voor nette uitlijning van img en h1 naast elkaar */
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 15px; /* Ruimte tussen logo en tekst */
+      display: flex; justify-content: center; align-items: center; gap: 15px; 
+      -webkit-print-color-adjust: exact; /* Zorgt dat achtergrondkleur mee print */
+      print-color-adjust: exact;
     }
     header img {
-      height: 50px; /* Vaste hoogte voor het logo */
-      background: white; /* Wit kader zodat het logo loskomt van de blauwe achtergrond */
+      height: 50px; 
+      background: white; 
       padding: 4px;
       border-radius: 4px;
     }
-    header h1 { 
-      font-size: 1.8rem; 
-      margin: 0; 
-    }
+    header h1 { font-size: 1.8rem; margin: 0; }
     
     .container { max-width: 850px; margin: 30px auto; background: var(--surface); padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     
@@ -56,6 +50,7 @@
     button { padding: 12px 28px; border: none; border-radius: 5px; font-size: 1rem; font-weight: 600; cursor: pointer; }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-secondary { background: #e0e0e0; color: #333; }
+    .btn-pdf { background: #d84315; color: white; } /* Oranje/Rood voor PDF */
 
     /* Resultaten Styles */
     #resultaten { margin-top: 30px; display: none; }
@@ -65,12 +60,12 @@
     
     .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     .result-full { grid-column: 1 / -1; }
-    .result-item { padding: 12px; border-radius: 6px; font-size: 0.95rem; }
+    .result-item { padding: 12px; border-radius: 6px; font-size: 0.95rem; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .result-ok { background: var(--success-bg); border: 1px solid #a5d6a7; color: var(--success-text); }
     .result-error { background: var(--error-bg); border: 1px solid #ef9a9a; color: var(--error-text); }
 
     /* Laadarmen Grid */
-    .arm-container { margin-top: 15px; }
+    .arm-container { margin-top: 15px; page-break-inside: avoid; }
     .arm-header { text-align: center; font-weight: bold; margin-bottom: 8px; color: #666; font-size: 0.95rem; }
     .arm-row { display: flex; gap: 12px; }
     
@@ -78,6 +73,7 @@
       flex: 1; padding: 12px 5px; border-radius: 6px; text-align: center; 
       display: flex; flex-direction: column; justify-content: center; min-height: 80px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
     .arm-title { font-weight: bold; font-size: 1rem; margin-bottom: 5px; }
     .offset-info { font-size: 0.8rem; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 2px; }
@@ -85,31 +81,37 @@
     .offset-val { font-weight: bold; }
 
     /* Sleepboten Styles */
-    .tug-section { text-align: center; margin-top: 15px; }
+    .tug-section { text-align: center; margin-top: 15px; page-break-inside: avoid; }
     .tug-row { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 10px; }
     .tug-item { text-align: center; }
     .tug-svg { width: 100px; height: auto; display: block; }
     .tug-caption { font-size: 0.9rem; color: #555; margin-top: 5px; font-weight: 600; }
     .tug-note { 
-      margin-top: 15px; 
-      padding: 10px; 
-      background-color: #fff8e1; 
-      border: 1px solid #ffecb3; 
-      color: #8d6e63; 
-      border-radius: 4px; 
-      font-size: 0.9rem; 
-      display: inline-block;
+      margin-top: 15px; padding: 10px; background-color: #fff8e1; 
+      border: 1px solid #ffecb3; color: #8d6e63; border-radius: 4px; 
+      font-size: 0.9rem; display: inline-block;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @media (max-width: 600px) { .result-grid, .arm-row { flex-direction: column; } .result-grid { grid-template-columns: 1fr; } }
+
+    /* PRINT STYLES */
+    @media print {
+      .buttons { display: none !important; }
+      body { background: white; }
+      .container { box-shadow: none; margin: 0; width: 100%; max-width: 100%; padding: 0; }
+      .form-group input { border: 1px solid #ddd; background: white; }
+      /* Zorg dat achtergrondkleuren geprint worden */
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
   </style>
 </head>
 <body onload="initApp()">
 
   <header>
     <img src="zrlogo.png" alt="Zeeland Refinery Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 2.5</h1>
+    <h1>ShipFit 2.6</h1>
   </header>
 
   <div class="container">
@@ -168,6 +170,7 @@
       <div class="buttons">
         <button type="button" class="btn-secondary" onclick="resetForm()">Wis Alles</button>
         <button type="button" class="btn-primary" onclick="checkAfmeren()">Controleer</button>
+        <button type="button" class="btn-pdf" onclick="createPDF()">PDF Rapport</button>
       </div>
     </form>
 
@@ -218,6 +221,31 @@
       document.getElementById('resultaten').innerHTML = '';
       document.getElementById('resultaten').classList.remove('visible');
     }
+  }
+
+  // PDF FUNCTIE
+  function createPDF() {
+    // Check eerst of er resultaten zijn, zo niet, voer check uit
+    if (!document.getElementById('resultaten').classList.contains('visible')) {
+      checkAfmeren();
+    }
+
+    const shipName = document.getElementById('shipName').value || 'Onbekend';
+    const imo = document.getElementById('imo').value || '0000000';
+    
+    // Sla huidige titel op
+    const oldTitle = document.title;
+    
+    // Pas titel aan (Browsers gebruiken dit als bestandsnaam suggestie)
+    document.title = `${shipName} (${imo})`;
+    
+    // Open print dialoog
+    window.print();
+    
+    // Zet titel terug (met kleine vertraging voor stabiliteit)
+    setTimeout(() => {
+      document.title = oldTitle;
+    }, 1000);
   }
 
   function getTugSVG(tonnage) {
@@ -331,7 +359,9 @@
     const resDiv = document.getElementById('resultaten');
     resDiv.innerHTML = html;
     resDiv.classList.add('visible');
-    resDiv.scrollIntoView({ behavior: 'smooth' });
+    // We scrollen niet als we op PDF klikken, wel als we op Check klikken
+    // Maar omdat checkAfmeren ook door PDF wordt aangeroepen, laten we het hier staan.
+    // De browser blokkeert de UI bij printen toch, dus het maakt niet uit.
   }
 </script>
 </body>
