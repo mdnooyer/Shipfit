@@ -3,11 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 2.1 - Met Offset</title>
+  <title>ShipFit 2.2 - Tugs & Offsets</title>
   <style>
     :root {
       --primary: #1976d2;
-      --primary-dark: #0d47a1;
       --bg: #f4f6f8;
       --surface: #ffffff;
       --text: #333;
@@ -16,6 +15,7 @@
       --success-text: #1b5e20;
       --error-bg: #ffebee;
       --error-text: #c62828;
+      --tug-color: #37474f; /* Donkergrijs/Blauw voor de sleepboot */
     }
 
     body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--text); }
@@ -41,7 +41,7 @@
     #resultaten { margin-top: 30px; display: none; }
     #resultaten.visible { display: block; animation: fadeIn 0.3s ease-in; }
     
-    .section-title { font-size: 1.1rem; color: var(--primary); margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 25px; font-weight: bold; }
+    .section-title { font-size: 1.1rem; color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 30px; font-weight: bold; }
     
     .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     .result-full { grid-column: 1 / -1; }
@@ -55,31 +55,20 @@
     .arm-row { display: flex; gap: 12px; }
     
     .arm-block { 
-      flex: 1; 
-      padding: 12px 5px; 
-      border-radius: 6px; 
-      text-align: center; 
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      min-height: 80px;
+      flex: 1; padding: 12px 5px; border-radius: 6px; text-align: center; 
+      display: flex; flex-direction: column; justify-content: center; min-height: 80px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    
     .arm-title { font-weight: bold; font-size: 1rem; margin-bottom: 5px; }
-    
-    .offset-info { 
-      font-size: 0.8rem; 
-      margin-top: 4px; 
-      padding-top: 4px; 
-      border-top: 1px solid rgba(0,0,0,0.1); 
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
+    .offset-info { font-size: 0.8rem; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 2px; }
     .offset-line { display: flex; justify-content: space-between; padding: 0 5px; }
     .offset-val { font-weight: bold; }
+
+    /* Sleepboten Styles */
+    .tug-row { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 10px; }
+    .tug-item { text-align: center; }
+    .tug-svg { width: 100px; height: auto; display: block; }
+    .tug-caption { font-size: 0.9rem; color: #555; margin-top: 5px; font-weight: 600; }
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @media (max-width: 600px) { .result-grid, .arm-row { flex-direction: column; } .result-grid { grid-template-columns: 1fr; } }
@@ -88,7 +77,7 @@
 <body onload="initApp()">
 
   <header>
-    <h1>ShipFit 2.1</h1>
+    <h1>ShipFit 2.2</h1>
   </header>
 
   <div class="container">
@@ -155,7 +144,6 @@
 
 <script>
   function initApp() {
-    // Simpele beveiliging
     const savedAuth = sessionStorage.getItem('shipfit_auth');
     if (savedAuth !== 'true') {
       const pw = prompt('Wachtwoord:');
@@ -200,6 +188,19 @@
     }
   }
 
+  // --- HULPFUNCTIE VOOR SLEEPBOTEN SVG ---
+  function getTugSVG(tonnage) {
+    return `
+    <svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg">
+      <path d="M5,55 Q25,60 50,55 T95,55" stroke="#90caf9" stroke-width="2" fill="none" opacity="0.6"/>
+      <path d="M10,40 Q5,55 25,55 L85,55 Q95,45 90,35 L10,35 Z" fill="#37474f"/>
+      <path d="M25,35 L25,15 L65,15 L65,35 Z" fill="#546e7a"/>
+      <rect x="30" y="18" width="15" height="8" fill="#b3e5fc"/>
+      <rect x="50" y="10" width="10" height="25" fill="#263238"/>
+      <text x="50" y="50" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="14" fill="#ffffff">${tonnage}t</text>
+    </svg>`;
+  }
+
   function checkAfmeren() {
     const fwd = parseFloat(document.getElementById('fwd').value) || 0;
     const aft = parseFloat(document.getElementById('aft').value) || 0;
@@ -213,7 +214,6 @@
 
     // 1. Basis Checks
     html += '<div class="section-title">Controle Afmetingen</div><div class="result-grid">';
-    
     html += (pb >= 50) ? `<div class="result-item result-ok">✓ Parallel body (${pb}m)</div>` : `<div class="result-item result-error">✕ Parallel body < 50m</div>`;
     html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA buiten limiet</div>`;
     
@@ -230,12 +230,7 @@
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ Deadweight</div>` : `<div class="result-item result-error">✕ Deadweight te hoog</div>`;
     html += '</div>';
 
-    // 3. Laadarmen Logica met Offset Berekening
-    
-    // Configuratie van de armen en hun vereiste FWD/AFT (Thresholds)
-    // Let op: Bij Afmeren SB checken we de 'armenPS' thresholds en vice versa.
-    // De drempelwaardes komen uit je originele script.
-    
+    // 3. Laadarmen Logica
     const armConfig = [
       { name: 'Arm 4', reqFwd: 28.35, reqAft: 19.68 },
       { name: 'Arm 5', reqFwd: 30.94, reqAft: 17.09 },
@@ -243,46 +238,19 @@
       { name: 'Arm 8', reqFwd: 39.17, reqAft: 8.86 }
     ];
 
-    // Helper functie om de HTML voor een rij armen te genereren
-    // isPortSide = true als we afmeren aan Bakboord (Port Side)
-    // Als we BB afmeren, gebruiken we de 'SB' condities uit het origineel (gespiegeld)
-    // Echter, in je originele code was het:
-    // ArmenSB Array (voor SB afmeren): checkt fwd > 19.68 (gespiegeld t.o.v arm 4)
-    // Laten we de originele logica strikt volgen maar nu dynamisch berekenen.
-
-    // Originele logica:
-    // PS Mooring uses Arm X-SB thresholds.
-    // SB Mooring uses Arm X-PS thresholds.
-    
-    // Array voor Afmeren Bakboord (Port Side) -> Gebruikt SB limits
     const renderArms = (mooringSide) => {
       let output = `<div class="arm-container"><div class="arm-header">Afmeren ${mooringSide}</div><div class="arm-row">`;
-      
       armConfig.forEach(arm => {
-        // Bepaal de vereiste waardes op basis van afmeerzijde
         let reqFwd, reqAft;
-        
         if (mooringSide === 'Bakboord (PS)') {
-          // Bij PS afmeren, gebruiken we de limieten zoals gedefinieerd voor SB in origineel
-          reqFwd = arm.reqFwd; 
-          reqAft = arm.reqAft;
+          reqFwd = arm.reqFwd; reqAft = arm.reqAft;
         } else {
-          // Bij SB afmeren, zijn de waardes omgedraaid (FWD wordt AFT vereiste, AFT wordt FWD vereiste)
-          // Check originele code: Arm4-PS conditie was fwd > 19.68 (was aft bij de ander) en aft > 28.35
-          reqFwd = arm.reqAft; 
-          reqAft = arm.reqFwd;
+          reqFwd = arm.reqAft; reqAft = arm.reqFwd;
         }
 
-        // Check of het past
-        const fits = (fwd > reqFwd && aft > reqAft);
-        
-        if (fits) {
-          // Bereken Margin (Offset)
-          // Hoeveel kan schip naar voren? (Wordt beperkt door AFT lengte die overblijft)
+        if (fwd > reqFwd && aft > reqAft) {
           const moveFwd = (aft - reqAft).toFixed(1);
-          // Hoeveel kan schip naar achteren? (Wordt beperkt door FWD lengte die overblijft)
           const moveAft = (fwd - reqFwd).toFixed(1);
-
           output += `
             <div class="arm-block result-ok">
               <div class="arm-title">${arm.name}</div>
@@ -299,9 +267,46 @@
       return output;
     };
 
-    html += '<div class="section-title">Laadarmen & Speling (Offset)</div>';
+    html += '<div class="section-title">Laadarmen & Speling</div>';
     html += renderArms('Bakboord (PS)');
     html += renderArms('Stuurboord (SB)');
+
+    // 4. Sleepboten (Tugboats) Logic
+    html += '<div class="section-title">Vereiste Sleepboten</div>';
+    
+    let requiredTugs = [];
+    
+    // Logica op basis van LOA
+    if (loa > 0) {
+      if (loa < 125) {
+        // <125m: 2x 35t
+        requiredTugs = [35, 35];
+      } else if (loa >= 125 && loa < 150) {
+        // 125-150m: 1x 50t, 1x 40t
+        requiredTugs = [50, 40];
+      } else if (loa >= 150 && loa < 220) {
+        // 150-220m: 1x 60t, 2x 50t (Aanname 600 was 60)
+        requiredTugs = [60, 50, 50];
+      } else {
+        // >220m: 4x 60t
+        requiredTugs = [60, 60, 60, 60];
+      }
+    }
+
+    if (requiredTugs.length > 0) {
+      html += '<div class="tug-row">';
+      requiredTugs.forEach(tonnage => {
+        html += `
+          <div class="tug-item">
+            ${getTugSVG(tonnage)}
+            <div class="tug-caption">Bollard Pull</div>
+          </div>
+        `;
+      });
+      html += '</div>';
+    } else {
+       html += '<div style="text-align:center; color:#777;">Vul LOA in om sleepboot requirements te zien.</div>';
+    }
 
     const resDiv = document.getElementById('resultaten');
     resDiv.innerHTML = html;
