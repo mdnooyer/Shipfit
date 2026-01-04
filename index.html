@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 2.8 - Clean Filename</title>
+  <title>ShipFit 2.9 - Q88 Updates</title>
   <style>
     :root {
       --primary: #1976d2;
@@ -121,7 +121,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Zeeland Refinery Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 2.8</h1>
+    <h1>ShipFit 2.9</h1>
   </header>
 
   <div class="container">
@@ -142,27 +142,27 @@
 
       <div class="row-flex">
         <div class="form-group">
-           <label for="loa">LOA [m]</label>
+           <label for="loa">Length overall (1.27) [m]</label>
            <input id="loa" type="number" step="0.01" inputmode="decimal" placeholder="100 - 280" oninput="saveData()">
         </div>
         <div class="form-group">
-           <label for="pbTotal">Parallel Body [m]</label>
-           <input id="pbTotal" type="number" step="0.01" inputmode="decimal" placeholder="Auto" readonly style="color:#666;">
+           <label for="pbTotal">totaal parallel body (1.34) Ballast conditions [m]</label>
+           <input id="pbTotal" type="number" step="0.01" inputmode="decimal" placeholder="Min 50" readonly style="color:#666;">
         </div>
         <div class="form-group">
-          <label for="manifold">Manifold Hoogte [m]</label>
+          <label for="manifold">Hoogte manifold  (8.24) [m]</label>
           <input id="manifold" type="number" step="0.01" inputmode="decimal" placeholder="Max 16.4" oninput="saveData()">
         </div>
       </div>
 
       <div class="row-flex">
         <div class="form-group">
-          <label for="fwd">Forward (Ballast) [m]</label>
-          <input id="fwd" type="number" step="0.01" inputmode="decimal" placeholder="Afstand FWD" oninput="handleDimChange()">
+          <label for="fwd">Forward (1.34) Ballast conditions [m]</label>
+          <input id="fwd" type="number" step="0.01" inputmode="decimal" placeholder="Forward (1.34) Ballast conditions" oninput="handleDimChange()">
         </div>
         <div class="form-group">
-          <label for="aft">Aft (Ballast) [m]</label>
-          <input id="aft" type="number" step="0.01" inputmode="decimal" placeholder="Afstand AFT" oninput="handleDimChange()">
+          <label for="aft">Aft (1.34) Ballast conditions [m]</label>
+          <input id="aft" type="number" step="0.01" inputmode="decimal" placeholder="Aft (1.34) Ballast conditions" oninput="handleDimChange()">
         </div>
         <div class="form-group">
            </div>
@@ -170,11 +170,11 @@
 
       <div class="row-flex">
         <div class="form-group">
-          <label for="freeboard">Freeboard [m]</label>
+          <label for="freeboard">Freeboord normal bal. (1.39) [m]</label>
           <input id="freeboard" type="number" step="0.01" inputmode="decimal" placeholder="Max 14.4" oninput="saveData()">
         </div>
         <div class="form-group">
-          <label for="deadweight">Summer DWT [t]</label>
+          <label for="deadweight">Summer deadweight (1.39) [t]</label>
           <input id="deadweight" type="number" step="0.01" inputmode="decimal" placeholder="Max 130000" oninput="saveData()">
         </div>
          <div class="form-group">
@@ -245,7 +245,7 @@
     const imo = document.getElementById('imo').value || '';
     const oldTitle = document.title;
     
-    // NAAM AANGEPAST: Geen ShipFit prefix meer
+    // Naam instellen voor bestand
     document.title = `${shipName}_${imo}`;
     
     window.print();
