@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 2.4 - Tug Update</title>
+  <title>ShipFit 2.5 - Met Logo</title>
   <style>
     :root {
       --primary: #1976d2;
@@ -19,8 +19,29 @@
 
     body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--text); }
     
-    header { background: var(--primary); color: white; padding: 20px 0; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    header h1 { display: inline; font-size: 1.8rem; margin: 0; }
+    /* HEADER STYLES AANGEPAST VOOR LOGO */
+    header { 
+      background: var(--primary); 
+      color: white; 
+      padding: 15px 0; 
+      text-align: center; 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+      /* Zorgt voor nette uitlijning van img en h1 naast elkaar */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px; /* Ruimte tussen logo en tekst */
+    }
+    header img {
+      height: 50px; /* Vaste hoogte voor het logo */
+      background: white; /* Wit kader zodat het logo loskomt van de blauwe achtergrond */
+      padding: 4px;
+      border-radius: 4px;
+    }
+    header h1 { 
+      font-size: 1.8rem; 
+      margin: 0; 
+    }
     
     .container { max-width: 850px; margin: 30px auto; background: var(--surface); padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     
@@ -87,7 +108,8 @@
 <body onload="initApp()">
 
   <header>
-    <h1>ShipFit 2.4</h1>
+    <img src="zrlogo.png" alt="Zeeland Refinery Logo" onerror="this.style.display='none'">
+    <h1>ShipFit 2.5</h1>
   </header>
 
   <div class="container">
@@ -283,7 +305,6 @@
         requiredTugs = [35, 35];
       } else if (loa >= 125 && loa < 150) {
         requiredTugs = [50, 40];
-        // Hier is de tekst aangepast:
         tugNote = "<strong>Let op:</strong> Gezamenlijke Bollard Pull moet minimaal <strong>90 ton</strong> zijn.<br>(men mag afwijken naar minimaal 39 ton ipv 40).";
       } else if (loa >= 150 && loa < 220) {
         requiredTugs = [60, 50, 50];
