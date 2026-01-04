@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 2.6 - PDF Export</title>
+  <title>ShipFit 2.7 - Compact PDF</title>
   <style>
     :root {
       --primary: #1976d2;
@@ -19,44 +19,35 @@
 
     body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--text); }
     
+    /* HEADER */
     header { 
-      background: var(--primary); 
-      color: white; 
-      padding: 15px 0; 
-      text-align: center; 
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+      background: var(--primary); color: white; padding: 15px 0; text-align: center; 
       display: flex; justify-content: center; align-items: center; gap: 15px; 
-      -webkit-print-color-adjust: exact; /* Zorgt dat achtergrondkleur mee print */
-      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
-    header img {
-      height: 50px; 
-      background: white; 
-      padding: 4px;
-      border-radius: 4px;
-    }
+    header img { height: 50px; background: white; padding: 4px; border-radius: 4px; }
     header h1 { font-size: 1.8rem; margin: 0; }
     
     .container { max-width: 850px; margin: 30px auto; background: var(--surface); padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     
+    /* FORM GRID */
     .row-flex { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; }
     .form-group { flex: 1; display: flex; flex-direction: column; min-width: 200px; }
-    
     .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: #555; }
     .form-group input { padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; }
-    .form-group input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(25,118,210,0.15); }
-
+    
+    /* BUTTONS */
     .buttons { display: flex; justify-content: center; gap: 15px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
     button { padding: 12px 28px; border: none; border-radius: 5px; font-size: 1rem; font-weight: 600; cursor: pointer; }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-secondary { background: #e0e0e0; color: #333; }
-    .btn-pdf { background: #d84315; color: white; } /* Oranje/Rood voor PDF */
+    .btn-pdf { background: #d84315; color: white; }
 
-    /* Resultaten Styles */
+    /* RESULTS */
     #resultaten { margin-top: 30px; display: none; }
-    #resultaten.visible { display: block; animation: fadeIn 0.3s ease-in; }
+    #resultaten.visible { display: block; }
     
-    .section-title { font-size: 1.1rem; color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 30px; font-weight: bold; }
+    .section-title { font-size: 1.1rem; color: var(--primary); margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 25px; font-weight: bold; }
     
     .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     .result-full { grid-column: 1 / -1; }
@@ -64,46 +55,70 @@
     .result-ok { background: var(--success-bg); border: 1px solid #a5d6a7; color: var(--success-text); }
     .result-error { background: var(--error-bg); border: 1px solid #ef9a9a; color: var(--error-text); }
 
-    /* Laadarmen Grid */
+    /* ARMS */
     .arm-container { margin-top: 15px; page-break-inside: avoid; }
-    .arm-header { text-align: center; font-weight: bold; margin-bottom: 8px; color: #666; font-size: 0.95rem; }
-    .arm-row { display: flex; gap: 12px; }
-    
+    .arm-header { text-align: center; font-weight: bold; margin-bottom: 5px; color: #666; font-size: 0.9rem; }
+    .arm-row { display: flex; gap: 10px; }
     .arm-block { 
-      flex: 1; padding: 12px 5px; border-radius: 6px; text-align: center; 
-      display: flex; flex-direction: column; justify-content: center; min-height: 80px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      flex: 1; padding: 10px 5px; border-radius: 6px; text-align: center; 
+      display: flex; flex-direction: column; justify-content: center; min-height: 70px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
-    .arm-title { font-weight: bold; font-size: 1rem; margin-bottom: 5px; }
-    .offset-info { font-size: 0.8rem; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 2px; }
-    .offset-line { display: flex; justify-content: space-between; padding: 0 5px; }
-    .offset-val { font-weight: bold; }
+    .arm-title { font-weight: bold; font-size: 0.95rem; margin-bottom: 3px; }
+    .offset-info { font-size: 0.75rem; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 2px; }
+    .offset-line { display: flex; justify-content: space-between; padding: 0 2px; }
 
-    /* Sleepboten Styles */
-    .tug-section { text-align: center; margin-top: 15px; page-break-inside: avoid; }
-    .tug-row { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 10px; }
+    /* TUGS */
+    .tug-section { text-align: center; margin-top: 10px; page-break-inside: avoid; }
+    .tug-row { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 5px; }
     .tug-item { text-align: center; }
-    .tug-svg { width: 100px; height: auto; display: block; }
-    .tug-caption { font-size: 0.9rem; color: #555; margin-top: 5px; font-weight: 600; }
-    .tug-note { 
-      margin-top: 15px; padding: 10px; background-color: #fff8e1; 
-      border: 1px solid #ffecb3; color: #8d6e63; border-radius: 4px; 
-      font-size: 0.9rem; display: inline-block;
-      -webkit-print-color-adjust: exact; print-color-adjust: exact;
-    }
+    .tug-svg { width: 90px; height: auto; display: block; }
+    .tug-caption { font-size: 0.8rem; color: #555; font-weight: 600; }
+    .tug-note { margin-top: 10px; padding: 8px; background: #fff8e1; border: 1px solid #ffecb3; color: #8d6e63; border-radius: 4px; font-size: 0.85rem; display: inline-block; }
 
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    @media (max-width: 600px) { .result-grid, .arm-row { flex-direction: column; } .result-grid { grid-template-columns: 1fr; } }
-
-    /* PRINT STYLES */
+    /* =========================================
+       PRINT STYLES (PDF OPTIMIZATION)
+       ========================================= */
     @media print {
+      @page { margin: 0.5cm; size: A4 portrait; } /* Smalle marges */
+      
+      body { background: white; font-size: 11px; } /* Kleiner lettertype */
+      .container { width: 100%; max-width: 100%; margin: 0; padding: 0; box-shadow: none; }
+      
+      header { padding: 10px 0; margin-bottom: 15px; }
+      header img { height: 40px; }
+      header h1 { font-size: 1.4rem; }
+      
       .buttons { display: none !important; }
-      body { background: white; }
-      .container { box-shadow: none; margin: 0; width: 100%; max-width: 100%; padding: 0; }
-      .form-group input { border: 1px solid #ddd; background: white; }
-      /* Zorg dat achtergrondkleuren geprint worden */
-      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      hr { display: none; }
+
+      /* Inputs omzetten naar compacte tekstweergave */
+      .row-flex { gap: 10px; margin-bottom: 5px; display: grid; grid-template-columns: repeat(3, 1fr); }
+      .row-flex:first-of-type { grid-template-columns: 1fr 1fr; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
+      
+      .form-group label { font-size: 0.75rem; margin-bottom: 0; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+      .form-group input { 
+        border: none !important; background: transparent !important; padding: 0 !important; 
+        font-weight: bold; font-size: 0.95rem; color: #000;
+        height: auto;
+      }
+      
+      /* Secties samenvoegen/verkleinen */
+      .section-title { margin-top: 15px; margin-bottom: 5px; font-size: 1rem; border-color: #ccc; }
+      
+      /* Grid naar 3 kolommen voor resultaten om hoogte te besparen */
+      .result-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .result-item { padding: 4px 8px; font-size: 0.8rem; border-width: 1px; }
+      
+      /* Laadarmen compacter */
+      .arm-container { margin-top: 10px; }
+      .arm-block { min-height: 50px; padding: 5px; border: 1px solid #ccc; }
+      .arm-title { font-size: 0.85rem; }
+      
+      /* Sleepboten kleiner */
+      .tug-svg { width: 50px; } /* Veel kleiner op PDF */
+      .tug-caption { font-size: 0.7rem; }
+      .tug-note { padding: 4px; font-size: 0.75rem; margin-top: 5px; }
     }
   </style>
 </head>
@@ -111,7 +126,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Zeeland Refinery Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 2.6</h1>
+    <h1>ShipFit 2.7</h1>
   </header>
 
   <div class="container">
@@ -128,16 +143,20 @@
         </div>
       </div>
 
-      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+      <hr>
 
       <div class="row-flex">
         <div class="form-group">
-           <label for="loa">Length Overall (LOA) [m]</label>
+           <label for="loa">LOA [m]</label>
            <input id="loa" type="number" step="0.01" inputmode="decimal" placeholder="100 - 280" oninput="saveData()">
         </div>
         <div class="form-group">
-           <label for="pbTotal">Total Parallel Body [m]</label>
-           <input id="pbTotal" type="number" step="0.01" inputmode="decimal" placeholder="Auto-berekend" readonly style="background:#f0f0f0; color:#666;">
+           <label for="pbTotal">Parallel Body [m]</label>
+           <input id="pbTotal" type="number" step="0.01" inputmode="decimal" placeholder="Auto" readonly style="color:#666;">
+        </div>
+        <div class="form-group">
+          <label for="manifold">Manifold Hoogte [m]</label>
+          <input id="manifold" type="number" step="0.01" inputmode="decimal" placeholder="Max 16.4" oninput="saveData()">
         </div>
       </div>
 
@@ -150,27 +169,27 @@
           <label for="aft">Aft (Ballast) [m]</label>
           <input id="aft" type="number" step="0.01" inputmode="decimal" placeholder="Afstand AFT" oninput="handleDimChange()">
         </div>
+        <div class="form-group">
+           </div>
       </div>
 
       <div class="row-flex">
         <div class="form-group">
-          <label for="freeboard">Freeboard (Normal Ballast) [m]</label>
+          <label for="freeboard">Freeboard [m]</label>
           <input id="freeboard" type="number" step="0.01" inputmode="decimal" placeholder="Max 14.4" oninput="saveData()">
         </div>
         <div class="form-group">
-          <label for="deadweight">Summer Deadweight [t]</label>
+          <label for="deadweight">Summer DWT [t]</label>
           <input id="deadweight" type="number" step="0.01" inputmode="decimal" placeholder="Max 130000" oninput="saveData()">
         </div>
-        <div class="form-group">
-          <label for="manifold">Hoogte Manifold [m]</label>
-          <input id="manifold" type="number" step="0.01" inputmode="decimal" placeholder="Max 16.4" oninput="saveData()">
-        </div>
+         <div class="form-group">
+           </div>
       </div>
 
       <div class="buttons">
         <button type="button" class="btn-secondary" onclick="resetForm()">Wis Alles</button>
         <button type="button" class="btn-primary" onclick="checkAfmeren()">Controleer</button>
-        <button type="button" class="btn-pdf" onclick="createPDF()">PDF Rapport</button>
+        <button type="button" class="btn-pdf" onclick="createPDF()">Download PDF</button>
       </div>
     </form>
 
@@ -223,29 +242,20 @@
     }
   }
 
-  // PDF FUNCTIE
   function createPDF() {
-    // Check eerst of er resultaten zijn, zo niet, voer check uit
     if (!document.getElementById('resultaten').classList.contains('visible')) {
       checkAfmeren();
     }
-
-    const shipName = document.getElementById('shipName').value || 'Onbekend';
-    const imo = document.getElementById('imo').value || '0000000';
-    
-    // Sla huidige titel op
+    const shipName = document.getElementById('shipName').value || 'Report';
+    const imo = document.getElementById('imo').value || '';
     const oldTitle = document.title;
     
-    // Pas titel aan (Browsers gebruiken dit als bestandsnaam suggestie)
-    document.title = `${shipName} (${imo})`;
+    // Naam instellen voor het bestand
+    document.title = `ShipFit_${shipName}_${imo}`;
     
-    // Open print dialoog
     window.print();
     
-    // Zet titel terug (met kleine vertraging voor stabiliteit)
-    setTimeout(() => {
-      document.title = oldTitle;
-    }, 1000);
+    setTimeout(() => { document.title = oldTitle; }, 1000);
   }
 
   function getTugSVG(tonnage) {
@@ -271,22 +281,20 @@
 
     let html = '';
 
-    // 1. Basis Checks
-    html += '<div class="section-title">Controle Afmetingen</div><div class="result-grid">';
-    html += (pb >= 50) ? `<div class="result-item result-ok">✓ Parallel body (${pb}m)</div>` : `<div class="result-item result-error">✕ Parallel body < 50m</div>`;
-    html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA buiten limiet</div>`;
+    // Checks (Compact grid voor PDF)
+    html += '<div class="section-title">Controles & Limieten</div><div class="result-grid">';
+    
+    html += (pb >= 50) ? `<div class="result-item result-ok">✓ PB (${pb}m)</div>` : `<div class="result-item result-error">✕ PB < 50m</div>`;
+    html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA Fout</div>`;
     const sumDiff = Math.abs((fwd + aft) - pb);
-    html += (sumDiff <= 1) ? `<div class="result-item result-ok result-full">✓ Geometrie correct</div>` : `<div class="result-item result-error result-full">✕ Geometrie fout</div>`;
+    html += (sumDiff <= 1) ? `<div class="result-item result-ok">✓ Geometrie</div>` : `<div class="result-item result-error">✕ Geometrie</div>`;
+
+    html += (freeboard <= 14.4) ? `<div class="result-item result-ok">✓ FB (${freeboard}m)</div>` : `<div class="result-item result-error">✕ FB te hoog</div>`;
+    html += (manifold <= 16.4) ? `<div class="result-item result-ok">✓ Manifold</div>` : `<div class="result-item result-error">✕ Manifold</div>`;
+    html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
     html += '</div>';
 
-    // 2. Limieten
-    html += '<div class="section-title">Terminal Limieten</div><div class="result-grid">';
-    html += (freeboard <= 14.4) ? `<div class="result-item result-ok">✓ Freeboard</div>` : `<div class="result-item result-error">✕ Freeboard te hoog</div>`;
-    html += (manifold <= 16.4) ? `<div class="result-item result-ok">✓ Manifold</div>` : `<div class="result-item result-error">✕ Manifold te hoog</div>`;
-    html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ Deadweight</div>` : `<div class="result-item result-error">✕ Deadweight te hoog</div>`;
-    html += '</div>';
-
-    // 3. Laadarmen
+    // Laadarmen
     const armConfig = [
       { name: 'Arm 4', reqFwd: 28.35, reqAft: 19.68 },
       { name: 'Arm 5', reqFwd: 30.94, reqAft: 17.09 },
@@ -308,8 +316,8 @@
           const moveFwd = (aft - reqAft).toFixed(1);
           const moveAft = (fwd - reqFwd).toFixed(1);
           output += `<div class="arm-block result-ok"><div class="arm-title">${arm.name}</div>
-            <div class="offset-info"><div class="offset-line"><span>Vooruit:</span><span class="offset-val">+${moveFwd}m</span></div>
-            <div class="offset-line"><span>Achteruit:</span><span class="offset-val">+${moveAft}m</span></div></div></div>`;
+            <div class="offset-info"><div class="offset-line"><span>Fwd:</span><span class="offset-val">+${moveFwd}</span></div>
+            <div class="offset-line"><span>Aft:</span><span class="offset-val">+${moveAft}</span></div></div></div>`;
         } else {
            output += `<div class="arm-block result-error"><div class="arm-title">${arm.name}</div><div>Past niet</div></div>`;
         }
@@ -318,11 +326,11 @@
       return output;
     };
 
-    html += '<div class="section-title">Laadarmen & Speling</div>';
+    html += '<div class="section-title">Laadarmen</div>';
     html += renderArms('Bakboord (PS)');
     html += renderArms('Stuurboord (SB)');
 
-    // 4. Sleepboten Logic
+    // Sleepboten
     html += '<div class="section-title">Vereiste Sleepboten</div>';
     
     let requiredTugs = [];
@@ -333,7 +341,7 @@
         requiredTugs = [35, 35];
       } else if (loa >= 125 && loa < 150) {
         requiredTugs = [50, 40];
-        tugNote = "<strong>Let op:</strong> Gezamenlijke Bollard Pull moet minimaal <strong>90 ton</strong> zijn.<br>(men mag afwijken naar minimaal 39 ton ipv 40).";
+        tugNote = "<strong>Let op:</strong> Minimaal <strong>90 ton</strong> totaal.<br>(afwijking naar 39t ipv 40t toegestaan).";
       } else if (loa >= 150 && loa < 220) {
         requiredTugs = [60, 50, 50];
       } else {
@@ -347,21 +355,15 @@
         html += `<div class="tug-item">${getTugSVG(tonnage)}<div class="tug-caption">BP</div></div>`;
       });
       html += '</div>';
-      
-      if (tugNote) {
-        html += `<div class="tug-note">${tugNote}</div>`;
-      }
+      if (tugNote) { html += `<div class="tug-note">${tugNote}</div>`; }
       html += '</div>';
     } else {
-       html += '<div style="text-align:center; color:#777;">Vul LOA in.</div>';
+       html += '<div style="text-align:center; color:#777; font-size:0.8rem;">Vul LOA in.</div>';
     }
 
     const resDiv = document.getElementById('resultaten');
     resDiv.innerHTML = html;
     resDiv.classList.add('visible');
-    // We scrollen niet als we op PDF klikken, wel als we op Check klikken
-    // Maar omdat checkAfmeren ook door PDF wordt aangeroepen, laten we het hier staan.
-    // De browser blokkeert de UI bij printen toch, dus het maakt niet uit.
   }
 </script>
 </body>
