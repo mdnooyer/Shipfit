@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 3.5 - FWD Exact Match</title>
+  <title>ShipFit 3.6 - Regex Update</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -106,7 +106,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Zeeland Refinery Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 3.5</h1>
+    <h1>ShipFit 3.6</h1>
   </header>
 
   <div class="container">
@@ -223,13 +223,6 @@
   }
 
   function parseQ88Text(text) {
-    // Helper: Zoek 2e getal in een rij
-    const findNormalBallastValue = (keyword) => {
-      const regex = new RegExp(keyword + "\\D*?([\\d\\.]+|--?)\\s+([\\d\\.]+)", "i");
-      const match = text.match(regex);
-      return match ? parseFloat(match[2].replace(/,/g, '')) : null;
-    };
-
     const findAnyVal = (regex) => {
       const match = text.match(regex);
       return match ? parseFloat(match[1].replace(/,/g, '')) : null;
@@ -242,34 +235,25 @@
       document.getElementById('imo').value = nameMatch[2];
     }
 
-    // --- 1.34 SECTIE ---
-// Pakt expliciet het 2e getal achter "Forward to mid-point manifold"
-const fwdMatch = text.match(
-  /Forward\s+to\s+mid-?point\s+manifold[^\r\n\d]*\d+(?:[.,]\d+)?[^\r\n\d]+(\d+(?:[.,]\d+)?)/i
-);
+    // --- 1.34 SECTIE (Nieuwe Logica) ---
 
-if (fwdMatch) {
-  document.getElementById('fwd').value = parseFloat(fwdMatch[1].replace(',', '.'));
-}
-    // FWD: Zoek exact "Forward to mid-point manifold:" en pak 2e getal
-    // Regex uitleg: 
-    // Forward to mid-point manifold   -> letterlijke tekst
-    // \s*:\s* -> dubbele punt met evt spaties
-    // ([\d\.]+|--?)                   -> 1e getal of streepje (negeren, capture groep 1)
-    // \s+                             -> spatie(s)
-    // ([\d\.]+)                       -> 2e getal (pakken, capture groep 2)
-    //const fwdMatch = text.match(/Forward\s+to\s+mid-point\s+manifold\s*:\s*([\d\.]+|--?)\s+([\d\.]+)/i);
-   // if (fwdMatch) {
-   //   document.getElementById('fwd').value = parseFloat(fwdMatch[2]);
-  //  }
+    // FWD: Pakt expliciet het 2e getal achter "Forward to mid-point manifold"
+    const fwdMatch = text.match(/Forward\s+to\s+mid-?point\s+manifold[^\r\n\d]*\d+(?:[.,]\d+)?[^\r\n\d]+(\d+(?:[.,]\d+)?)/i);
+    if (fwdMatch) {
+      document.getElementById('fwd').value = parseFloat(fwdMatch[1].replace(',', '.'));
+    }
 
-    // AFT: (Hergebruik algemene functie want die zoekt ook al op 2e kolom)
-    const aftVal = findNormalBallastValue("Aft to mid-point manifold");
-    if(aftVal) document.getElementById('aft').value = aftVal;
+    // AFT: Hetzelfde patroon voor AFT
+    const aftMatch = text.match(/Aft\s+to\s+mid-?point\s+manifold[^\r\n\d]*\d+(?:[.,]\d+)?[^\r\n\d]+(\d+(?:[.,]\d+)?)/i);
+    if (aftMatch) {
+      document.getElementById('aft').value = parseFloat(aftMatch[1].replace(',', '.'));
+    }
 
-    // PB: (Hergebruik algemene functie)
-    const pbVal = findNormalBallastValue("Parallel body length");
-    if(pbVal) document.getElementById('pbTotal').value = pbVal;
+    // PB: Hetzelfde patroon voor Parallel Body
+    const pbMatch = text.match(/Parallel\s+body\s+length[^\r\n\d]*\d+(?:[.,]\d+)?[^\r\n\d]+(\d+(?:[.,]\d+)?)/i);
+    if (pbMatch) {
+      document.getElementById('pbTotal').value = parseFloat(pbMatch[1].replace(',', '.'));
+    }
 
     // --- MANIFOLD ---
     const maniVal = findAnyVal(/Manifold\s+height\s+above\D*?([\d\.]+)/i);
