@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 3.4.1 - Manifold Update</title>
+  <title>ShipFit 3.5 - FWD Exact Match</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -106,7 +106,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Zeeland Refinery Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 3.4</h1>
+    <h1>ShipFit 3.5</h1>
   </header>
 
   <div class="container">
@@ -223,9 +223,8 @@
   }
 
   function parseQ88Text(text) {
-    // Helper: Zoek 2e getal in een rij (voor 1.34 Normal Ballast)
+    // Helper: Zoek 2e getal in een rij
     const findNormalBallastValue = (keyword) => {
-      // Regex: Keyword ... Iets van cijfers/streep (1e kolom) ... Spatie ... Capture 2e getal
       const regex = new RegExp(keyword + "\\D*?([\\d\\.]+|--?)\\s+([\\d\\.]+)", "i");
       const match = text.match(regex);
       return match ? parseFloat(match[2].replace(/,/g, '')) : null;
@@ -243,29 +242,33 @@
       document.getElementById('imo').value = nameMatch[2];
     }
 
-    // 1.34 Sectie (Specifiek 2e kolom / Normal Ballast)
-    const fwdVal = findNormalBallastValue("Forward to mid-point manifold");
-    if(fwdVal) document.getElementById('fwd').value = fwdVal;
+    // --- 1.34 SECTIE ---
 
+    // FWD: Zoek exact "Forward to mid-point manifold:" en pak 2e getal
+    // Regex uitleg: 
+    // Forward to mid-point manifold   -> letterlijke tekst
+    // \s*:\s* -> dubbele punt met evt spaties
+    // ([\d\.]+|--?)                   -> 1e getal of streepje (negeren, capture groep 1)
+    // \s+                             -> spatie(s)
+    // ([\d\.]+)                       -> 2e getal (pakken, capture groep 2)
+    const fwdMatch = text.match(/Forward\s+to\s+mid-point\s+manifold\s*:\s*([\d\.]+|--?)\s+([\d\.]+)/i);
+    if (fwdMatch) {
+      document.getElementById('fwd').value = parseFloat(fwdMatch[2]);
+    }
+
+    // AFT: (Hergebruik algemene functie want die zoekt ook al op 2e kolom)
     const aftVal = findNormalBallastValue("Aft to mid-point manifold");
     if(aftVal) document.getElementById('aft').value = aftVal;
 
+    // PB: (Hergebruik algemene functie)
     const pbVal = findNormalBallastValue("Parallel body length");
     if(pbVal) document.getElementById('pbTotal').value = pbVal;
 
-    // 8.24 Manifold (Zoek exact "Manifold height above" en pak eerstvolgende getal)
-    const maniVal = findAnyVal(
-  /Manifold\s+height\s+above[^\r\n\d]{0,60}(\d+(?:[.,]\d+)?)/i
-);
+    // --- MANIFOLD ---
+    const maniVal = findAnyVal(/Manifold\s+height\s+above\D*?([\d\.]+)/i);
+    if(maniVal) document.getElementById('manifold').value = maniVal;
 
-if (maniVal) {
-  document.getElementById('manifold').value = String(maniVal).replace(',', '.');
-}
-    // 8.24 Manifold (Zoek exact "Manifold height above" en pak eerstvolgende getal)
-    //const maniVal = findAnyVal(/Manifold\s+height\s+above\D*?([\d\.]+)/i);
-   // if(maniVal) document.getElementById('manifold').value = maniVal;
-
-    // LOA & DWT
+    // --- OVERIG ---
     const loaVal = findAnyVal(/1\.27\s.*?(\d{3}(\.\d+)?)/) || findAnyVal(/Length\s*Overall.*?(\d{3}(\.\d+)?)/i);
     if(loaVal) document.getElementById('loa').value = loaVal;
 
