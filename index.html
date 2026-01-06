@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 3.2.1 - Normal Ballast Focus</title>
+  <title>ShipFit 3.3 - Manifold Fix</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -106,7 +106,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Zeeland Refinery Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 3.2</h1>
+    <h1>ShipFit 3.3</h1>
   </header>
 
   <div class="container">
@@ -116,7 +116,7 @@
         <button class="btn-upload">📄 Upload Q88 PDF</button>
         <input type="file" id="pdf-upload" accept=".pdf" onchange="handleFileUpload(this)">
       </div>
-      <div id="loading">PDF analyseren (Normal Ballast zoeken)...</div>
+      <div id="loading">PDF analyseren...</div>
     </div>
 
     <form id="afmeer-form" onsubmit="return false;">
@@ -205,14 +205,14 @@
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
       let fullText = '';
-      const maxPages = Math.min(pdf.numPages, 5); 
+      const maxPages = Math.min(pdf.numPages, 7); // Scannen iets meer pagina's voor de zekerheid
       for (let i = 1; i <= maxPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
         fullText += textContent.items.map(item => item.str).join(' ') + ' ';
       }
       parseQ88Text(fullText);
-      alert('Q88 Data (Normal Ballast) succesvol ingeladen!');
+      alert('PDF succesvol geanalyseerd.');
     } catch (error) {
       console.error(error);
       alert('Fout bij lezen PDF.');
@@ -223,10 +223,9 @@
   }
 
   function parseQ88Text(text) {
-    // Helper: Zoek 2e getal in een rij
-    // Patroon: Trefwoord ... Getal/Streep(1e kolom) ... Spatie ... GETAL(2e kolom)
+    // Helper: Zoek 2e getal in een rij (voor 1.34 Normal Ballast)
     const findNormalBallastValue = (keyword) => {
-      // Regex zoekt: keyword, dan karakters, dan 1e getal (of -), dan spatie, dan capture 2e getal
+      // Regex: Keyword ... Iets van cijfers/streep (1e kolom) ... Spatie ... Capture 2e getal
       const regex = new RegExp(keyword + "\\D*?([\\d\\.]+|--?)\\s+([\\d\\.]+)", "i");
       const match = text.match(regex);
       return match ? parseFloat(match[2].replace(/,/g, '')) : null;
@@ -245,27 +244,31 @@
     }
 
     // 1.34 Sectie (Specifiek 2e kolom / Normal Ballast)
-    // FWD (Forward to mid-point)
     const fwdVal = findNormalBallastValue("Forward to mid-point manifold");
     if(fwdVal) document.getElementById('fwd').value = fwdVal;
 
-    // AFT (Aft to mid-point)
     const aftVal = findNormalBallastValue("Aft to mid-point manifold");
     if(aftVal) document.getElementById('aft').value = aftVal;
 
-    // PB (Parallel body length)
     const pbVal = findNormalBallastValue("Parallel body length");
     if(pbVal) document.getElementById('pbTotal').value = pbVal;
 
-    // 8.24 Manifold
-    const maniVal = findAnyVal(/8.24\s.*?(\d{1,2}(\.\d+)?)/);
-    if(maniVal) document.getElementById('manifold').value = maniVal;
+    // 8.24 Manifold (Specifiek "above the waterline in normal ballast")
+    // Zoekt naar: 8.24 Manifold height above the waterline in normal ballast ... [GETAL]
+    const maniMatch = text.match(/8\.24\s+Manifold\s+height\s+above\s+the\s+waterline\s+in\s+normal\s+ballast\D*?([\d\.]+)/i);
+    if(maniMatch) {
+      document.getElementById('manifold').value = parseFloat(maniMatch[1]);
+    } else {
+      // Fallback
+      const maniVal = findAnyVal(/8\.24\s.*?(\d{1,2}(\.\d+)?)/);
+      if(maniVal) document.getElementById('manifold').value = maniVal;
+    }
 
     // LOA & DWT
-    const loaVal = findAnyVal(/1.27\s.*?(\d{3}(\.\d+)?)/) || findAnyVal(/Length\s*Overall.*?(\d{3}(\.\d+)?)/i);
+    const loaVal = findAnyVal(/1\.27\s.*?(\d{3}(\.\d+)?)/) || findAnyVal(/Length\s*Overall.*?(\d{3}(\.\d+)?)/i);
     if(loaVal) document.getElementById('loa').value = loaVal;
 
-    const dwtVal = findAnyVal(/1.39\s.*?(\d{1,3}(,\d{3})*(\.\d+)?)(\s|$)/);
+    const dwtVal = findAnyVal(/1\.39\s.*?(\d{1,3}(,\d{3})*(\.\d+)?)(\s|$)/);
     if(dwtVal) document.getElementById('deadweight').value = dwtVal;
 
     const fbVal = findAnyVal(/Freeboard\s*\(ballast\).*?(\d{1,2}(\.\d+)?)/i);
@@ -278,9 +281,6 @@
   function handleDimChange() {
     const fwd = parseFloat(document.getElementById('fwd').value) || 0;
     const aft = parseFloat(document.getElementById('aft').value) || 0;
-    // We herberekenen PB niet als die al uit de PDF is gehaald,
-    // maar als de gebruiker zelf typt wel.
-    // Voor nu simpel: als fwd+aft ingevuld, update PB.
     if (fwd > 0 && aft > 0) {
       document.getElementById('pbTotal').value = (fwd + aft).toFixed(2);
     }
