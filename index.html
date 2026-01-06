@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 3.8 - Placeholders Back</title>
+  <title>ShipFit 3.9 - Matrix Scanner</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -86,7 +86,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Zeeland Refinery Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 3.8</h1>
+    <h1>ShipFit 3.9</h1>
   </header>
 
   <div class="container">
@@ -96,70 +96,36 @@
         <button class="btn-upload">📄 Upload Q88 PDF</button>
         <input type="file" id="pdf-upload" accept=".pdf" onchange="handleFileUpload(this)">
       </div>
-      <div id="loading">PDF analyseren...</div>
+      <div id="loading">PDF matrix analyseren...</div>
     </div>
 
     <form id="afmeer-form" onsubmit="return false;">
-      
       <div class="row-flex">
-        <div class="form-group">
-          <label for="shipName">Scheepsnaam</label>
-          <input id="shipName" type="text" placeholder="Naam schip" oninput="saveData()">
-        </div>
-        <div class="form-group">
-          <label for="imo">IMO-nummer</label>
-          <input id="imo" type="text" inputmode="numeric" maxlength="7" placeholder="1234567" oninput="saveData()">
-        </div>
+        <div class="form-group"><label for="shipName">Scheepsnaam</label><input id="shipName" type="text" placeholder="Naam schip" oninput="saveData()"></div>
+        <div class="form-group"><label for="imo">IMO-nummer</label><input id="imo" type="text" placeholder="1234567" oninput="saveData()"></div>
       </div>
-
       <hr>
-
       <div class="row-flex">
-        <div class="form-group">
-           <label for="loa">Length overall (1.27) [m]</label>
-           <input id="loa" type="number" step="0.01" inputmode="decimal" placeholder="100 - 280" oninput="saveData()">
-        </div>
-        <div class="form-group">
-           <label for="pbTotal">tot. parallel body (1.34) Ballast cond. [m]</label>
-           <input id="pbTotal" type="number" step="0.01" inputmode="decimal" placeholder="Min 50" readonly style="color:#666;">
-        </div>
-        <div class="form-group">
-          <label for="manifold">Hoogte manifold (8.24) [m]</label>
-          <input id="manifold" type="number" step="0.01" inputmode="decimal" placeholder="Max 16.4" oninput="saveData()">
-        </div>
+        <div class="form-group"><label for="loa">Length overall (1.27) [m]</label><input id="loa" type="number" step="0.01" placeholder="100 - 280" oninput="saveData()"></div>
+        <div class="form-group"><label for="pbTotal">tot. parallel body (1.34) Ballast cond. [m]</label><input id="pbTotal" type="number" step="0.01" placeholder="Min 50" readonly style="color:#666;"></div>
+        <div class="form-group"><label for="manifold">Hoogte manifold (8.24) [m]</label><input id="manifold" type="number" step="0.01" placeholder="Max 16.4" oninput="saveData()"></div>
       </div>
-
       <div class="row-flex">
-        <div class="form-group">
-          <label for="fwd">Forward (1.34) Ballast conditions [m]</label>
-          <input id="fwd" type="number" step="0.01" inputmode="decimal" placeholder="Forward (1.34) Ballast conditions" oninput="handleDimChange()">
-        </div>
-        <div class="form-group">
-          <label for="aft">Aft (1.34) Ballast conditions [m]</label>
-          <input id="aft" type="number" step="0.01" inputmode="decimal" placeholder="Aft (1.34) Ballast conditions" oninput="handleDimChange()">
-        </div>
+        <div class="form-group"><label for="fwd">Forward (1.34) Ballast [m]</label><input id="fwd" type="number" step="0.01" placeholder="Fwd Ballast" oninput="handleDimChange()"></div>
+        <div class="form-group"><label for="aft">Aft (1.34) Ballast [m]</label><input id="aft" type="number" step="0.01" placeholder="Aft Ballast" oninput="handleDimChange()"></div>
         <div class="form-group"></div>
       </div>
-
       <div class="row-flex">
-        <div class="form-group">
-          <label for="freeboard">Freeboord normal bal. (1.39) [m]</label>
-          <input id="freeboard" type="number" step="0.01" inputmode="decimal" placeholder="Max 14.4" oninput="saveData()">
-        </div>
-        <div class="form-group">
-          <label for="deadweight">Summer deadweight (1.39) [t]</label>
-          <input id="deadweight" type="number" step="0.01" inputmode="decimal" placeholder="Max 130000" oninput="saveData()">
-        </div>
-         <div class="form-group"></div>
+        <div class="form-group"><label for="freeboard">Freeboord normal bal. (1.39) [m]</label><input id="freeboard" type="number" step="0.01" placeholder="Max 14.4" oninput="saveData()"></div>
+        <div class="form-group"><label for="deadweight">Summer deadweight (1.39) [t]</label><input id="deadweight" type="number" step="0.01" placeholder="Max 130000" oninput="saveData()"></div>
+        <div class="form-group"></div>
       </div>
-
       <div class="buttons">
         <button type="button" class="btn-secondary" onclick="resetForm()">Wis Alles</button>
         <button type="button" class="btn-primary" onclick="checkAfmeren()">Controleer</button>
         <button type="button" class="btn-pdf" onclick="createPDF()">Download PDF</button>
       </div>
     </form>
-
     <div id="resultaten"></div>
   </div>
 
@@ -167,10 +133,8 @@
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
   function initApp() {
-    const savedAuth = sessionStorage.getItem('shipfit_auth');
-    if (savedAuth !== 'true') {
-      const pw = prompt('Wachtwoord:');
-      if (pw !== '445501') { document.body.innerHTML = ''; return; }
+    if (sessionStorage.getItem('shipfit_auth') !== 'true') {
+      if (prompt('Wachtwoord:') !== '445501') { document.body.innerHTML = ''; return; }
       sessionStorage.setItem('shipfit_auth', 'true');
     }
     loadData();
@@ -185,25 +149,23 @@
 
   async function handleFileUpload(input) {
     if (input.files.length === 0) return;
-    
-    // 1. WIS EERST ALLE OUDE DATA
     clearFieldsSilent();
-
-    const file = input.files[0];
     document.getElementById('loading').style.display = 'block';
     
     try {
-      const arrayBuffer = await file.arrayBuffer();
+      const arrayBuffer = await input.files[0].arrayBuffer();
       const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
       let fullText = '';
-      const maxPages = Math.min(pdf.numPages, 7); 
+      // We scannen iets meer pagina's om zeker te zijn
+      const maxPages = Math.min(pdf.numPages, 10); 
       for (let i = 1; i <= maxPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
+        // Voeg een spatie toe tussen items om samensmelting te voorkomen
         fullText += textContent.items.map(item => item.str).join(' ') + ' ';
       }
       parseQ88Text(fullText);
-      alert('PDF succesvol geanalyseerd.');
+      alert('Q88 Data succesvol ingeladen (Matrix Scan).');
     } catch (error) {
       console.error(error);
       alert('Fout bij lezen PDF.');
@@ -214,50 +176,105 @@
   }
 
   function parseQ88Text(text) {
-    const findAnyVal = (regex) => {
-      const match = text.match(regex);
-      return match ? parseFloat(match[1].replace(/,/g, '')) : null;
+    const cleanText = text.replace(/\s+/g, ' '); // Normaliseer witruimte
+
+    // Helper: Zoek getal na tekst
+    const findVal = (pattern) => {
+      const regex = new RegExp(pattern + ".*?([\\d\\.,]+)", "i");
+      const match = cleanText.match(regex);
+      if (match) return parseFloat(match[1].replace(/,/g, ''));
+      return null;
     };
 
-    // Naam & IMO
-    const nameMatch = text.match(/1\.2\s+Vessel[’']?s\s+name.*?\)\s*[:\.]?\s*([A-Z0-9\s\-\.]+?)\s*\((\d{7})\)/i);
+    // 1. Naam & IMO
+    const nameMatch = cleanText.match(/1\.2\s+Vessel[’']?s\s+name.*?\)\s*[:\.]?\s*([A-Z0-9\s\-\.]+?)\s*\((\d{7})\)/i);
     if (nameMatch) {
       document.getElementById('shipName').value = nameMatch[1].trim();
       document.getElementById('imo').value = nameMatch[2];
+    } else {
+        const altImo = cleanText.match(/IMO\s*Number\s*[:\.]?\s*(\d{7})/i);
+        if(altImo) document.getElementById('imo').value = altImo[1];
     }
 
-    // --- 1.34 SECTIE ---
-
-    // FWD: 
-    const fwdMatch = text.match(/Forward\s+to\s+mid-?point\s+manifold[^\r\n\d]*\d+(?:[.,]\d+)?[^\r\n\d]+(\d+(?:[.,]\d+)?)/i);
-    if (fwdMatch) {
-      document.getElementById('fwd').value = parseFloat(fwdMatch[1].replace(',', '.'));
+    // 2. MATRIX SCAN VOOR 1.34 (Parallel Body)
+    // We zoeken het blok tekst tussen "1.34" en "1.35"
+    // Dit werkt beter omdat Q88 vaak alle getallen in een dump gooit.
+    const section134Match = cleanText.match(/1\.34(.*?)(?:1\.35|Tonnages)/i);
+    
+    if (section134Match) {
+        const sectionText = section134Match[1];
+        // Vind alle getallen die op meters lijken (xx.xx)
+        const numbers = sectionText.match(/(\d+\.\d+)/g);
+        
+        if (numbers && numbers.length >= 6) {
+            // Q88 matrix is meestal:
+            // Rij 1: Forward (Light, Normal, Summer)
+            // Rij 2: Aft (Light, Normal, Summer)
+            // Rij 3: PB (Light, Normal, Summer)
+            // OF Kolommen: Light(F,A,P), Normal(F,A,P), Summer(F,A,P)
+            
+            // De Ek-River PDF volgorde lijkt te zijn:
+            // Light Fwd, Normal Fwd, Summer Fwd (nee wacht, dat klopt niet met visual)
+            // Laten we de "Normal Ballast" kolom detecteren. Dat is meestal de MIDDELSTE waarde.
+            
+            // Als we 9 getallen hebben:
+            // 0,1,2 = Forward (Light, Ballast, Summer) -> We willen index 1
+            // 3,4,5 = Aft (Light, Ballast, Summer) -> We willen index 4
+            // 6,7,8 = PB (Light, Ballast, Summer) -> We willen index 7
+            
+            if (numbers.length >= 9) {
+                document.getElementById('fwd').value = parseFloat(numbers[1]); // Normal Ballast Fwd
+                document.getElementById('aft').value = parseFloat(numbers[4]); // Normal Ballast Aft
+                document.getElementById('pbTotal').value = parseFloat(numbers[7]); // Normal Ballast PB
+            } else {
+                // Fallback als er minder getallen zijn (soms ontbreekt lightship data)
+                // Probeer regex matching
+                const fwdVal = findVal("Forward to mid-point manifold.*?Normal Ballast"); 
+                if(fwdVal) document.getElementById('fwd').value = fwdVal;
+            }
+        }
     }
 
-    // AFT: 
-    const aftMatch = text.match(/Aft\s+to\s+mid-?point\s+manifold[^\r\n\d]*\d+(?:[.,]\d+)?[^\r\n\d]+(\d+(?:[.,]\d+)?)/i);
-    if (aftMatch) {
-      document.getElementById('aft').value = parseFloat(aftMatch[1].replace(',', '.'));
+    // 3. MANIFOLD (8.24) - Slimme "Max" check
+    // We zoeken het blok 8.24
+    const section824Match = cleanText.match(/8\.24(.*?)(?:8\.25|Number\/size)/i);
+    if (section824Match) {
+        const maniText = section824Match[1];
+        const maniNumbers = maniText.match(/(\d+\.\d+)/g);
+        if (maniNumbers && maniNumbers.length > 0) {
+            // In Ballast ligt het schip hoger, dus de afstand tot waterlijn is groter.
+            // We pakken gewoon het grootste getal dat we vinden in sectie 8.24.
+            // Dit lost het probleem op van volgorde (Ballast/Loaded of Loaded/Ballast).
+            const floats = maniNumbers.map(n => parseFloat(n));
+            const maxVal = Math.max(...floats);
+            document.getElementById('manifold').value = maxVal;
+        }
     }
 
-    // PB:
-    const pbMatch = text.match(/Parallel\s+body\s+length[^\r\n\d]*\d+(?:[.,]\d+)?[^\r\n\d]+(\d+(?:[.,]\d+)?)/i);
-    if (pbMatch) {
-      document.getElementById('pbTotal').value = parseFloat(pbMatch[1].replace(',', '.'));
+    // 4. Overige waardes (LOA, DWT, Freeboard)
+    const loaVal = findVal("1\\.27\\s.*?Length overall");
+    if(!loaVal) {
+         const altLoa = findVal("Length overall"); // Fallback
+         if(altLoa) document.getElementById('loa').value = altLoa;
+    } else {
+        document.getElementById('loa').value = loaVal;
     }
 
-    // --- MANIFOLD ---
-    const maniVal = findAnyVal(/Manifold\s+height\s+above\D*?([\d\.]+)/i);
-    if(maniVal) document.getElementById('manifold').value = maniVal;
-
-    // --- OVERIG ---
-    const loaVal = findAnyVal(/1\.27\s.*?(\d{3}(\.\d+)?)/) || findAnyVal(/Length\s*Overall.*?(\d{3}(\.\d+)?)/i);
-    if(loaVal) document.getElementById('loa').value = loaVal;
-
-    const dwtVal = findAnyVal(/1\.39\s.*?(\d{1,3}(,\d{3})*(\.\d+)?)(\s|$)/);
+    const dwtVal = findVal("1\\.39\\s.*?Summer"); // Probeer Summer DWT
     if(dwtVal) document.getElementById('deadweight').value = dwtVal;
+    else {
+        // Fallback: zoek getal > 1000 in sectie 1.39
+        const sec139 = cleanText.match(/1\.39(.*?)1\.40/i);
+        if(sec139) {
+             const bigNum = sec139[1].match(/(\d{2,3},\d{3}|\d{5,})/); // Zoek groot getal
+             if(bigNum) document.getElementById('deadweight').value = parseFloat(bigNum[0].replace(/,/g, ''));
+        }
+    }
 
-    const fbVal = findAnyVal(/Freeboard\s*\(ballast\).*?(\d{1,2}(\.\d+)?)/i);
+    // Freeboard: zoek specifiek "Normal Ballast" in de buurt van Freeboard
+    // Dit is lastig omdat het in een tabel staat.
+    // We zoeken naar "Normal Ballast Condition" en pakken het eerste getal daarna (dat is Freeboard)
+    const fbVal = findVal("Normal Ballast Condition");
     if(fbVal) document.getElementById('freeboard').value = fbVal;
 
     handleDimChange();
@@ -267,7 +284,8 @@
   function handleDimChange() {
     const fwd = parseFloat(document.getElementById('fwd').value) || 0;
     const aft = parseFloat(document.getElementById('aft').value) || 0;
-    if (fwd > 0 && aft > 0) {
+    // Update alleen als user handmatig typt of als PDF niks vond
+    if (fwd > 0 && aft > 0 && !document.getElementById('pbTotal').value) {
       document.getElementById('pbTotal').value = (fwd + aft).toFixed(2);
     }
     saveData();
@@ -297,9 +315,7 @@
   }
 
   function createPDF() {
-    if (!document.getElementById('resultaten').classList.contains('visible')) {
-      checkAfmeren();
-    }
+    if (!document.getElementById('resultaten').classList.contains('visible')) checkAfmeren();
     const shipName = document.getElementById('shipName').value || 'Report';
     const imo = document.getElementById('imo').value || '';
     const oldTitle = document.title;
@@ -350,18 +366,13 @@
       let output = `<div class="arm-container"><div class="arm-header">Afmeren ${mooringSide}</div><div class="arm-row">`;
       armConfig.forEach(arm => {
         let reqFwd, reqAft;
-        if (mooringSide === 'Stuurboord (SB)') {
-          reqFwd = arm.reqFwd; reqAft = arm.reqAft;
-        } else {
-          reqFwd = arm.reqAft; reqAft = arm.reqFwd;
-        }
+        if (mooringSide === 'Stuurboord (SB)') { reqFwd = arm.reqFwd; reqAft = arm.reqAft; } 
+        else { reqFwd = arm.reqAft; reqAft = arm.reqFwd; }
 
         if (fwd > reqFwd && aft > reqAft) {
           const moveFwd = (aft - reqAft).toFixed(1);
           const moveAft = (fwd - reqFwd).toFixed(1);
-          output += `<div class="arm-block result-ok"><div class="arm-title">${arm.name}</div>
-            <div class="offset-info"><div class="offset-line"><span>Fwd:</span><span class="offset-val">+${moveFwd}</span></div>
-            <div class="offset-line"><span>Aft:</span><span class="offset-val">+${moveAft}</span></div></div></div>`;
+          output += `<div class="arm-block result-ok"><div class="arm-title">${arm.name}</div><div class="offset-info"><div class="offset-line"><span>Fwd:</span><span class="offset-val">+${moveFwd}</span></div><div class="offset-line"><span>Aft:</span><span class="offset-val">+${moveAft}</span></div></div></div>`;
         } else {
            output += `<div class="arm-block result-error"><div class="arm-title">${arm.name}</div><div>Past niet</div></div>`;
         }
@@ -379,7 +390,7 @@
     let tugNote = "";
     if (loa > 0) {
       if (loa < 125) { requiredTugs = [35, 35]; } 
-      else if (loa >= 125 && loa < 150) { requiredTugs = [50, 40]; tugNote = "<strong>Let op:</strong> Minimaal <strong>90 ton</strong> totaal.<br>(afwijking naar 39t ipv 40t toegestaan)."; } 
+      else if (loa >= 125 && loa < 150) { requiredTugs = [50, 40]; tugNote = "<strong>Let op:</strong> Min. 90t totaal (bijv. 39+51t OK)."; } 
       else if (loa >= 150 && loa < 220) { requiredTugs = [60, 50, 50]; } 
       else { requiredTugs = [60, 60, 60, 60]; }
     }
