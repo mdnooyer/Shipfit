@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 2.11 - Logic Swap</title>
+  <title>ShipFit 3.0 - Q88 Import</title>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+
   <style>
     :root {
       --primary: #1976d2;
@@ -19,7 +22,6 @@
 
     body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--text); }
     
-    /* HEADER */
     header { 
       background: var(--primary); color: white; padding: 15px 0; text-align: center; 
       display: flex; justify-content: center; align-items: center; gap: 15px; 
@@ -30,32 +32,35 @@
     
     .container { max-width: 850px; margin: 30px auto; background: var(--surface); padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     
-    /* FORM GRID */
     .row-flex { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; }
     .form-group { flex: 1; display: flex; flex-direction: column; min-width: 200px; }
     .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: #555; }
     .form-group input { padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; }
     
-    /* BUTTONS */
-    .buttons { display: flex; justify-content: center; gap: 15px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
-    button { padding: 12px 28px; border: none; border-radius: 5px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+    .buttons { display: flex; justify-content: center; gap: 15px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; flex-wrap: wrap; }
+    button, .file-upload-btn { padding: 12px 28px; border: none; border-radius: 5px; font-size: 1rem; font-weight: 600; cursor: pointer; display: inline-block; text-align: center;}
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-secondary { background: #e0e0e0; color: #333; }
     .btn-pdf { background: #d84315; color: white; }
+    
+    /* Upload Button Styling */
+    .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
+    .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
+    .btn-upload { background: #2e7d32; color: white; display: flex; align-items: center; gap: 8px; }
 
-    /* RESULTS */
+    /* Loading Spinner */
+    #loading { display: none; text-align: center; margin-bottom: 20px; color: var(--primary); font-weight: bold; }
+
     #resultaten { margin-top: 30px; display: none; }
     #resultaten.visible { display: block; }
     
     .section-title { font-size: 1.1rem; color: var(--primary); margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 25px; font-weight: bold; }
-    
     .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     .result-full { grid-column: 1 / -1; }
     .result-item { padding: 12px; border-radius: 6px; font-size: 0.95rem; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .result-ok { background: var(--success-bg); border: 1px solid #a5d6a7; color: var(--success-text); }
     .result-error { background: var(--error-bg); border: 1px solid #ef9a9a; color: var(--error-text); }
 
-    /* ARMS */
     .arm-container { margin-top: 15px; page-break-inside: avoid; }
     .arm-header { text-align: center; font-weight: bold; margin-bottom: 5px; color: #666; font-size: 0.9rem; }
     .arm-row { display: flex; gap: 10px; }
@@ -68,7 +73,6 @@
     .offset-info { font-size: 0.75rem; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 2px; }
     .offset-line { display: flex; justify-content: space-between; padding: 0 2px; }
 
-    /* TUGS */
     .tug-section { text-align: center; margin-top: 10px; page-break-inside: avoid; }
     .tug-row { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 5px; }
     .tug-item { text-align: center; }
@@ -76,41 +80,25 @@
     .tug-caption { font-size: 0.8rem; color: #555; font-weight: 600; }
     .tug-note { margin-top: 10px; padding: 8px; background: #fff8e1; border: 1px solid #ffecb3; color: #8d6e63; border-radius: 4px; font-size: 0.85rem; display: inline-block; }
 
-    /* =========================================
-       PRINT STYLES (PDF OPTIMIZATION)
-       ========================================= */
     @media print {
       @page { margin: 0.5cm; size: A4 portrait; }
-      
       body { background: white; font-size: 11px; }
       .container { width: 100%; max-width: 100%; margin: 0; padding: 0; box-shadow: none; }
-      
       header { padding: 10px 0; margin-bottom: 15px; }
       header img { height: 40px; }
       header h1 { font-size: 1.4rem; }
-      
       .buttons { display: none !important; }
       hr { display: none; }
-
       .row-flex { gap: 10px; margin-bottom: 5px; display: grid; grid-template-columns: repeat(3, 1fr); }
       .row-flex:first-of-type { grid-template-columns: 1fr 1fr; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
-      
       .form-group label { font-size: 0.75rem; margin-bottom: 0; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
-      .form-group input { 
-        border: none !important; background: transparent !important; padding: 0 !important; 
-        font-weight: bold; font-size: 0.95rem; color: #000;
-        height: auto;
-      }
-      
+      .form-group input { border: none !important; background: transparent !important; padding: 0 !important; font-weight: bold; font-size: 0.95rem; color: #000; height: auto; }
       .section-title { margin-top: 15px; margin-bottom: 5px; font-size: 1rem; border-color: #ccc; }
-      
       .result-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
       .result-item { padding: 4px 8px; font-size: 0.8rem; border-width: 1px; }
-      
       .arm-container { margin-top: 10px; }
       .arm-block { min-height: 50px; padding: 5px; border: 1px solid #ccc; }
       .arm-title { font-size: 0.85rem; }
-      
       .tug-svg { width: 50px; }
       .tug-caption { font-size: 0.7rem; }
       .tug-note { padding: 4px; font-size: 0.75rem; margin-top: 5px; }
@@ -121,10 +109,13 @@
 
   <header>
     <img src="zrlogo.png" alt="Zeeland Refinery Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 2.11</h1>
+    <h1>ShipFit 3.0</h1>
   </header>
 
   <div class="container">
+    
+    <div id="loading">Bezig met lezen van Q88 PDF...</div>
+
     <form id="afmeer-form" onsubmit="return false;">
       
       <div class="row-flex">
@@ -165,7 +156,7 @@
           <input id="aft" type="number" step="0.01" inputmode="decimal" placeholder="Aft (1.34) Ballast conditions" oninput="handleDimChange()">
         </div>
         <div class="form-group">
-           </div>
+        </div>
       </div>
 
       <div class="row-flex">
@@ -178,10 +169,15 @@
           <input id="deadweight" type="number" step="0.01" inputmode="decimal" placeholder="Max 130000" oninput="saveData()">
         </div>
          <div class="form-group">
-           </div>
+        </div>
       </div>
 
       <div class="buttons">
+        <div class="file-upload-wrapper">
+          <button class="file-upload-btn btn-upload">📄 Upload Q88 PDF</button>
+          <input type="file" id="pdf-upload" accept=".pdf" onchange="handleFileUpload(this)">
+        </div>
+
         <button type="button" class="btn-secondary" onclick="resetForm()">Wis Alles</button>
         <button type="button" class="btn-primary" onclick="checkAfmeren()">Controleer</button>
         <button type="button" class="btn-pdf" onclick="createPDF()">Download PDF</button>
@@ -192,6 +188,9 @@
   </div>
 
 <script>
+  // Setup PDF.js Worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
   function initApp() {
     const savedAuth = sessionStorage.getItem('shipfit_auth');
     if (savedAuth !== 'true') {
@@ -202,6 +201,112 @@
     loadData();
   }
 
+  // --- Q88 PDF PARSER LOGICA ---
+  async function handleFileUpload(input) {
+    if (input.files.length === 0) return;
+    
+    const file = input.files[0];
+    document.getElementById('loading').style.display = 'block';
+    
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+      
+      let fullText = '';
+      // We scannen de eerste 5 pagina's (daar staat meestal de geometrie)
+      const maxPages = Math.min(pdf.numPages, 5);
+      
+      for (let i = 1; i <= maxPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        fullText += pageText + ' ';
+      }
+
+      console.log("PDF Text Extracted length:", fullText.length);
+      parseQ88Text(fullText);
+      alert('Gegevens succesvol ingeladen vanuit Q88! Controleer de velden.');
+
+    } catch (error) {
+      console.error(error);
+      alert('Fout bij lezen PDF. Zorg dat het een tekst-gebaseerde PDF is (geen scan).');
+    } finally {
+      document.getElementById('loading').style.display = 'none';
+      input.value = ''; // Reset input
+    }
+  }
+
+  function parseQ88Text(text) {
+    // Helper om getal te vinden na een trefwoord of code
+    // We zoeken vrij breed omdat formatting verschilt per Q88
+    const findValue = (regex) => {
+      const match = text.match(regex);
+      return match ? parseFloat(match[1].replace(/,/g, '')) : null;
+    };
+
+    const findString = (regex) => {
+      const match = text.match(regex);
+      return match ? match[1].trim() : null;
+    };
+
+    // 1. Scheepsnaam (Vaak bovenaan of bij 1.1)
+    const nameVal = findString(/Name of vessel\s*[:\.]?\s*([A-Za-z0-9\s]+?)(?=\s\d|$)/i) || 
+                    findString(/1\.1\s+Name of vessel\s+([A-Za-z0-9\s]+)/i);
+    if(nameVal) document.getElementById('shipName').value = nameVal;
+
+    // 2. IMO (1.13)
+    const imoVal = findString(/IMO\s*Number\s*[:\.]?\s*(\d{7})/i) || 
+                   findString(/1\.13\s.*?(\d{7})/);
+    if(imoVal) document.getElementById('imo').value = imoVal;
+
+    // 3. LOA (1.27) - Zoekt naar getal rond 1.27
+    const loaVal = findValue(/1\.27\s.*?(\d{3}(\.\d+)?)/) || 
+                   findValue(/Length\s*Overall\s.*?(\d{3}(\.\d+)?)/i);
+    if(loaVal) document.getElementById('loa').value = loaVal;
+
+    // 4. Deadweight (1.39)
+    const dwtVal = findValue(/1\.39\s.*?(\d{1,3}(,\d{3})*(\.\d+)?)/) || 
+                   findValue(/Summer\s*Deadweight\s.*?(\d{5,6})/i);
+    if(dwtVal) document.getElementById('deadweight').value = dwtVal;
+
+    // 5. Parallel Body (1.34)
+    // Dit is lastig omdat er vaak meerdere waarden staan (Ballast/Laden).
+    // We proberen de eerste te pakken die op Parallel Body lijkt.
+    // Vaak staat er: "Parallel body length ... Ballast: 80.5"
+    // Regex zoekt naar "Ballast" in de buurt van 1.34
+    const pbVal = findValue(/1\.34\s.*?Ballast.*?\s(\d{2,3}(\.\d+)?)/i) ||
+                  findValue(/Parallel\s*body.*?Ballast.*?\s(\d{2,3}(\.\d+)?)/i);
+    // Als we die niet vinden, maar we vinden FWD en AFT hieronder, berekent de app het zelf.
+
+    // 6. FWD & AFT (Onderdeel van 1.34)
+    // Zoekt naar: "Bow to mid-point manifold... Ballast: 40.5" (FWD)
+    // Zoekt naar: "Stern to mid-point manifold... Ballast: 45.2" (AFT)
+    // Let op: Tekstvolgorde in PDF kan rommelig zijn.
+    
+    // Poging FWD (Bow to manifold)
+    const fwdVal = findValue(/Bow\s*to\s*mid-point\s*manifold.*?Ballast.*?\s(\d{2,3}(\.\d+)?)/i);
+    if(fwdVal) document.getElementById('fwd').value = fwdVal;
+
+    // Poging AFT (Stern to manifold)
+    const aftVal = findValue(/Stern\s*to\s*mid-point\s*manifold.*?Ballast.*?\s(\d{2,3}(\.\d+)?)/i);
+    if(aftVal) document.getElementById('aft').value = aftVal;
+
+    // 7. Manifold Height (8.24)
+    const maniVal = findValue(/8\.24\s.*?(\d{1,2}(\.\d+)?)/) ||
+                    findValue(/Manifold\s*height\s*above.*?(\d{1,2}(\.\d+)?)/i);
+    if(maniVal) document.getElementById('manifold').value = maniVal;
+
+    // 8. Freeboard (1.39 of 1.29 - vaak lastig te vinden als "Normal Ballast")
+    // We laten deze vaak leeg of pakken de "Ballast" waarde bij Freeboard
+    const fbVal = findValue(/Freeboard\s*\(ballast\).*?(\d{1,2}(\.\d+)?)/i);
+    if(fbVal) document.getElementById('freeboard').value = fbVal;
+
+    // Trigger calculations en save
+    handleDimChange(); // Berekent PB als FWD en AFT gevonden zijn
+    saveData();
+  }
+
+  // --- BESTAANDE FUNCTIES ---
   function handleDimChange() {
     const fwd = parseFloat(document.getElementById('fwd').value) || 0;
     const aft = parseFloat(document.getElementById('aft').value) || 0;
@@ -244,18 +349,13 @@
     const shipName = document.getElementById('shipName').value || 'Report';
     const imo = document.getElementById('imo').value || '';
     const oldTitle = document.title;
-    
-    // Naam instellen voor bestand
     document.title = `${shipName}_${imo}`;
-    
     window.print();
-    
     setTimeout(() => { document.title = oldTitle; }, 1000);
   }
 
   function getTugSVG(tonnage) {
-    return `
-    <svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg">
+    return `<svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg">
       <path d="M5,55 Q25,60 50,55 T95,55" stroke="#90caf9" stroke-width="2" fill="none" opacity="0.6"/>
       <path d="M10,40 Q5,55 25,55 L85,55 Q95,45 90,35 L10,35 Z" fill="#37474f"/>
       <path d="M25,35 L25,15 L65,15 L65,35 Z" fill="#546e7a"/>
@@ -275,21 +375,16 @@
     const deadweight = parseFloat(document.getElementById('deadweight').value) || 0;
 
     let html = '';
-
-    // Checks (Compact grid voor PDF)
     html += '<div class="section-title">Controles & Limieten</div><div class="result-grid">';
-    
     html += (pb >= 50) ? `<div class="result-item result-ok">✓ PB (${pb}m)</div>` : `<div class="result-item result-error">✕ PB < 50m</div>`;
     html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA Fout</div>`;
     const sumDiff = Math.abs((fwd + aft) - pb);
     html += (sumDiff <= 1) ? `<div class="result-item result-ok">✓ Geometrie</div>` : `<div class="result-item result-error">✕ Geometrie</div>`;
-
     html += (freeboard <= 14.4) ? `<div class="result-item result-ok">✓ FB (${freeboard}m)</div>` : `<div class="result-item result-error">✕ FB te hoog</div>`;
     html += (manifold <= 16.4) ? `<div class="result-item result-ok">✓ Manifold</div>` : `<div class="result-item result-error">✕ Manifold</div>`;
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
     html += '</div>';
 
-    // Laadarmen
     const armConfig = [
       { name: 'Arm 4', reqFwd: 28.35, reqAft: 19.68 },
       { name: 'Arm 5', reqFwd: 30.94, reqAft: 17.09 },
@@ -301,19 +396,10 @@
       let output = `<div class="arm-container"><div class="arm-header">Afmeren ${mooringSide}</div><div class="arm-row">`;
       armConfig.forEach(arm => {
         let reqFwd, reqAft;
-        
-        // --- LOGICA AANGEPAST ---
-        // Stuurboord (SB) gebruikt nu de standaard configuratie (was eerder andersom)
-        // Bakboord (PS) gebruikt nu de gespiegelde waardes
-        
         if (mooringSide === 'Stuurboord (SB)') {
-          // SB = Standaard limits
-          reqFwd = arm.reqFwd; 
-          reqAft = arm.reqAft;
+          reqFwd = arm.reqFwd; reqAft = arm.reqAft;
         } else {
-          // PS = Spiegelen (Fwd wordt Aft requirement en andersom)
-          reqFwd = arm.reqAft; 
-          reqAft = arm.reqFwd;
+          reqFwd = arm.reqAft; reqAft = arm.reqFwd;
         }
 
         if (fwd > reqFwd && aft > reqAft) {
@@ -334,30 +420,19 @@
     html += renderArms('Bakboord (PS)');
     html += renderArms('Stuurboord (SB)');
 
-    // Sleepboten
     html += '<div class="section-title">Vereiste Sleepboten</div>';
-    
     let requiredTugs = [];
     let tugNote = "";
-    
     if (loa > 0) {
-      if (loa < 125) {
-        requiredTugs = [35, 35];
-      } else if (loa >= 125 && loa < 150) {
-        requiredTugs = [50, 40];
-        tugNote = "<strong>Let op:</strong> Minimaal <strong>90 ton</strong> totaal.<br>(afwijking naar 39t ipv 40t toegestaan).";
-      } else if (loa >= 150 && loa < 220) {
-        requiredTugs = [60, 50, 50];
-      } else {
-        requiredTugs = [60, 60, 60, 60];
-      }
+      if (loa < 125) { requiredTugs = [35, 35]; } 
+      else if (loa >= 125 && loa < 150) { requiredTugs = [50, 40]; tugNote = "<strong>Let op:</strong> Minimaal <strong>90 ton</strong> totaal.<br>(afwijking naar 39t ipv 40t toegestaan)."; } 
+      else if (loa >= 150 && loa < 220) { requiredTugs = [60, 50, 50]; } 
+      else { requiredTugs = [60, 60, 60, 60]; }
     }
 
     if (requiredTugs.length > 0) {
       html += '<div class="tug-section"><div class="tug-row">';
-      requiredTugs.forEach(tonnage => {
-        html += `<div class="tug-item">${getTugSVG(tonnage)}<div class="tug-caption">BP</div></div>`;
-      });
+      requiredTugs.forEach(tonnage => { html += `<div class="tug-item">${getTugSVG(tonnage)}<div class="tug-caption">BP</div></div>`; });
       html += '</div>';
       if (tugNote) { html += `<div class="tug-note">${tugNote}</div>`; }
       html += '</div>';
