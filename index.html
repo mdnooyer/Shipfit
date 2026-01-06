@@ -243,7 +243,14 @@
     }
 
     // --- 1.34 SECTIE ---
+// Pakt expliciet het 2e getal achter "Forward to mid-point manifold"
+const fwdMatch = text.match(
+  /Forward\s+to\s+mid-?point\s+manifold[^\r\n\d]*\d+(?:[.,]\d+)?[^\r\n\d]+(\d+(?:[.,]\d+)?)/i
+);
 
+if (fwdMatch) {
+  document.getElementById('fwd').value = parseFloat(fwdMatch[1].replace(',', '.'));
+}
     // FWD: Zoek exact "Forward to mid-point manifold:" en pak 2e getal
     // Regex uitleg: 
     // Forward to mid-point manifold   -> letterlijke tekst
@@ -251,10 +258,10 @@
     // ([\d\.]+|--?)                   -> 1e getal of streepje (negeren, capture groep 1)
     // \s+                             -> spatie(s)
     // ([\d\.]+)                       -> 2e getal (pakken, capture groep 2)
-    const fwdMatch = text.match(/Forward\s+to\s+mid-point\s+manifold\s*:\s*([\d\.]+|--?)\s+([\d\.]+)/i);
-    if (fwdMatch) {
-      document.getElementById('fwd').value = parseFloat(fwdMatch[2]);
-    }
+    //const fwdMatch = text.match(/Forward\s+to\s+mid-point\s+manifold\s*:\s*([\d\.]+|--?)\s+([\d\.]+)/i);
+   // if (fwdMatch) {
+   //   document.getElementById('fwd').value = parseFloat(fwdMatch[2]);
+  //  }
 
     // AFT: (Hergebruik algemene functie want die zoekt ook al op 2e kolom)
     const aftVal = findNormalBallastValue("Aft to mid-point manifold");
