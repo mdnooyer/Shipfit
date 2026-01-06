@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 3.3.1 - Manifold Fix</title>
+  <title>ShipFit 3.4 - Manifold Update</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -106,7 +106,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Zeeland Refinery Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 3.3</h1>
+    <h1>ShipFit 3.4</h1>
   </header>
 
   <div class="container">
@@ -205,7 +205,7 @@
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
       let fullText = '';
-      const maxPages = Math.min(pdf.numPages, 7); // Scannen iets meer pagina's voor de zekerheid
+      const maxPages = Math.min(pdf.numPages, 7); 
       for (let i = 1; i <= maxPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
@@ -253,16 +253,9 @@
     const pbVal = findNormalBallastValue("Parallel body length");
     if(pbVal) document.getElementById('pbTotal').value = pbVal;
 
-    // 8.24 Manifold (Specifiek "above the waterline in normal ballast")
-    // Zoekt naar: 8.24 Manifold height above the waterline in normal ballast ... [GETAL]
-    const maniMatch = text.match(s+Manifold\s+height\s+above\s+the\s+waterline\D*?([\d\.]+)/i);
-    if(maniMatch) {
-      document.getElementById('manifold').value = parseFloat(maniMatch[1]);
-    } else {
-      // Fallback
-      const maniVal = findAnyVal(/8\.24\s.*?(\d{1,2}(\.\d+)?)/);
-      if(maniVal) document.getElementById('manifold').value = maniVal;
-    }
+    // 8.24 Manifold (Zoek exact "Manifold height above" en pak eerstvolgende getal)
+    const maniVal = findAnyVal(/Manifold\s+height\s+above\D*?([\d\.]+)/i);
+    if(maniVal) document.getElementById('manifold').value = maniVal;
 
     // LOA & DWT
     const loaVal = findAnyVal(/1\.27\s.*?(\d{3}(\.\d+)?)/) || findAnyVal(/Length\s*Overall.*?(\d{3}(\.\d+)?)/i);
