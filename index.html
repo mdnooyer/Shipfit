@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 3.4 - Manifold Update</title>
+  <title>ShipFit 3.4.1 - Manifold Update</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -254,8 +254,16 @@
     if(pbVal) document.getElementById('pbTotal').value = pbVal;
 
     // 8.24 Manifold (Zoek exact "Manifold height above" en pak eerstvolgende getal)
-    const maniVal = findAnyVal(/Manifold\s+height\s+above\D*?([\d\.]+)/i);
-    if(maniVal) document.getElementById('manifold').value = maniVal;
+    const maniVal = findAnyVal(
+  /Manifold\s+height\s+above[^\r\n\d]{0,60}(\d+(?:[.,]\d+)?)/i
+);
+
+if (maniVal) {
+  document.getElementById('manifold').value = String(maniVal).replace(',', '.');
+}
+    // 8.24 Manifold (Zoek exact "Manifold height above" en pak eerstvolgende getal)
+    //const maniVal = findAnyVal(/Manifold\s+height\s+above\D*?([\d\.]+)/i);
+   // if(maniVal) document.getElementById('manifold').value = maniVal;
 
     // LOA & DWT
     const loaVal = findAnyVal(/1\.27\s.*?(\d{3}(\.\d+)?)/) || findAnyVal(/Length\s*Overall.*?(\d{3}(\.\d+)?)/i);
