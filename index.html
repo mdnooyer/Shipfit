@@ -258,14 +258,14 @@
     if(pbVal) document.getElementById('pbTotal').value = pbVal;
 
     // 8.24 Manifold
-    const maniVal = findAnyVal(/8\.24\s.*?(\d{1,2}(\.\d+)?)/);
+    const maniVal = findAnyVal(/8.24\s.*?(\d{1,2}(\.\d+)?)/);
     if(maniVal) document.getElementById('manifold').value = maniVal;
 
     // LOA & DWT
-    const loaVal = findAnyVal(/1\.27\s.*?(\d{3}(\.\d+)?)/) || findAnyVal(/Length\s*Overall.*?(\d{3}(\.\d+)?)/i);
+    const loaVal = findAnyVal(/1.27\s.*?(\d{3}(\.\d+)?)/) || findAnyVal(/Length\s*Overall.*?(\d{3}(\.\d+)?)/i);
     if(loaVal) document.getElementById('loa').value = loaVal;
 
-    const dwtVal = findAnyVal(/1\.39\s.*?(\d{1,3}(,\d{3})*(\.\d+)?)(\s|$)/);
+    const dwtVal = findAnyVal(/1.39\s.*?(\d{1,3}(,\d{3})*(\.\d+)?)(\s|$)/);
     if(dwtVal) document.getElementById('deadweight').value = dwtVal;
 
     const fbVal = findAnyVal(/Freeboard\s*\(ballast\).*?(\d{1,2}(\.\d+)?)/i);
