@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 3.3 - Manifold Fix</title>
+  <title>ShipFit 3.3.1 - Manifold Fix</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -255,7 +255,7 @@
 
     // 8.24 Manifold (Specifiek "above the waterline in normal ballast")
     // Zoekt naar: 8.24 Manifold height above the waterline in normal ballast ... [GETAL]
-    const maniMatch = text.match(/8\.24\s+Manifold\s+height\s+above\s+the\s+waterline\s+in\s+normal\s+ballast\D*?([\d\.]+)/i);
+    const maniMatch = text.match(s+Manifold\s+height\s+above\s+the\s+waterline\D*?([\d\.]+)/i);
     if(maniMatch) {
       document.getElementById('manifold').value = parseFloat(maniMatch[1]);
     } else {
