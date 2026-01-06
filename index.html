@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 2.10 - Label Update</title>
+  <title>ShipFit 2.11 - Logic Swap</title>
   <style>
     :root {
       --primary: #1976d2;
@@ -121,7 +121,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Zeeland Refinery Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 2.10</h1>
+    <h1>ShipFit 2.11</h1>
   </header>
 
   <div class="container">
@@ -301,10 +301,19 @@
       let output = `<div class="arm-container"><div class="arm-header">Afmeren ${mooringSide}</div><div class="arm-row">`;
       armConfig.forEach(arm => {
         let reqFwd, reqAft;
-        if (mooringSide === 'Bakboord (PS)') {
-          reqFwd = arm.reqFwd; reqAft = arm.reqAft;
+        
+        // --- LOGICA AANGEPAST ---
+        // Stuurboord (SB) gebruikt nu de standaard configuratie (was eerder andersom)
+        // Bakboord (PS) gebruikt nu de gespiegelde waardes
+        
+        if (mooringSide === 'Stuurboord (SB)') {
+          // SB = Standaard limits
+          reqFwd = arm.reqFwd; 
+          reqAft = arm.reqAft;
         } else {
-          reqFwd = arm.reqAft; reqAft = arm.reqFwd;
+          // PS = Spiegelen (Fwd wordt Aft requirement en andersom)
+          reqFwd = arm.reqAft; 
+          reqAft = arm.reqFwd;
         }
 
         if (fwd > reqFwd && aft > reqAft) {
