@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 4.3 - Tug Note Update</title>
+  <title>ShipFit 5.0 - Visual Plot</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -13,7 +13,7 @@
     header { background: var(--primary); color: white; padding: 15px 0; text-align: center; display: flex; justify-content: center; align-items: center; gap: 15px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     header img { height: 50px; background: white; padding: 4px; border-radius: 4px; }
     header h1 { font-size: 1.8rem; margin: 0; }
-    .container { max-width: 850px; margin: 30px auto; background: var(--surface); padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .container { max-width: 900px; margin: 30px auto; background: var(--surface); padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     
     .upload-section { background: #e3f2fd; border: 2px dashed #90caf9; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 30px; }
     .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
@@ -49,26 +49,23 @@
     .offset-line { display: flex; justify-content: space-between; padding: 0 2px; }
     .tug-row { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 5px; }
     .tug-svg { width: 90px; height: auto; }
-    
-    /* Geel blok voor sleepboot notitie */
-    .tug-note { 
-      margin-top: 15px; 
-      padding: 12px; 
-      background: #fff8e1; /* Geel/Creme */
-      border: 1px solid #ffecb3; 
-      color: #795548; 
-      border-radius: 4px; 
-      font-size: 0.9rem; 
-      display: inline-block; /* Zorgt dat centreren werkt */
-      font-weight: 500;
-    }
-
-    /* Mooring styles */
+    .tug-note { margin-top: 15px; padding: 12px; background: #fff8e1; border: 1px solid #ffecb3; color: #795548; border-radius: 4px; font-size: 0.9rem; display: inline-block; font-weight: 500; }
     .mooring-box { background: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 6px; margin-top: 10px; }
     .mooring-header { font-weight: bold; margin-bottom: 10px; text-align: center; color: #555; }
     .mooring-details { font-size: 0.9rem; line-height: 1.6; }
     .mooring-line { display: flex; justify-content: space-between; border-bottom: 1px dashed #eee; padding: 4px 0; }
     .mooring-line:last-child { border-bottom: none; }
+
+    /* Canvas Plot Styles */
+    #plot-container {
+      margin-top: 30px;
+      border: 1px solid #ccc;
+      background: white;
+      border-radius: 4px;
+      overflow-x: auto; /* Scrollbar op mobiel */
+      padding: 10px;
+    }
+    canvas { display: block; margin: 0 auto; }
 
     @media print {
       @page { margin: 0.5cm; size: A4 portrait; }
@@ -90,6 +87,8 @@
       .tug-svg { width: 50px; }
       .mooring-box { padding: 5px; border: 1px solid #ccc; }
       .tug-note { background: #fff8e1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      #plot-container { border: none; padding: 0; margin-top: 10px; page-break-inside: avoid; }
+      canvas { width: 100%; height: auto; }
     }
   </style>
 </head>
@@ -97,7 +96,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Zeeland Refinery Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 4.3</h1>
+    <h1>ShipFit 5.0</h1>
   </header>
 
   <div class="container">
@@ -137,7 +136,14 @@
         <button type="button" class="btn-pdf" onclick="createPDF()">Download PDF</button>
       </div>
     </form>
+    
     <div id="resultaten"></div>
+    
+    <div id="plot-container" style="display:none;">
+      <div class="section-title">Visuele Plot (Schaal 1 streepje = 20m)</div>
+      <canvas id="jettyCanvas" width="800" height="300"></canvas>
+    </div>
+
   </div>
 
 <script>
@@ -156,6 +162,7 @@
     localStorage.removeItem('shipfit_data');
     document.getElementById('resultaten').innerHTML = '';
     document.getElementById('resultaten').classList.remove('visible');
+    document.getElementById('plot-container').style.display = 'none';
   }
 
   async function handleFileUpload(input) {
@@ -186,7 +193,6 @@
 
   function parseQ88Text(text) {
     const cleanText = text.replace(/\s+/g, ' '); 
-
     const findVal = (pattern) => {
       const regex = new RegExp(pattern + ".*?([\\d\\.,]+)", "i");
       const match = cleanText.match(regex);
@@ -311,6 +317,139 @@
     </svg>`;
   }
 
+  // --- PLOT LOGIC ---
+  function drawPlot(fwd, aft) {
+    const canvas = document.getElementById('jettyCanvas');
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Settings
+    const midX = width / 2;
+    const scale = 2; // 1 meter = 2 pixels (dus 20m = 40px)
+    const jettyY = 100;
+    
+    // Jetty Coordinates (Distance from CL in meters)
+    // Left (Negative)
+    // MD1: -173.9, MD2: -104.4, MD5: -57.2, MD6: -37.0, BD2: -25.2, BD1: -77.0 ? (Check image if BD1 exists separately or is structure)
+    // Image says: MD1, MD2, MD5, MD6, BD2 ... Center ... BD3, MD7, MD8, MD3, MD4
+    // Based on user image diagram:
+    const jettyPoints = [
+        {type: 'MD', pos: -173.9, label: 'MD1'},
+        {type: 'MD', pos: -104.4, label: 'MD2'},
+        {type: 'MD', pos: -57.2, label: 'MD5'},
+        {type: 'MD', pos: -37.0, label: 'MD6'},
+        {type: 'BD', pos: -25.2, label: 'BD2'},
+        {type: 'CL', pos: 0, label: 'CL'},
+        {type: 'BD', pos: 24.9, label: 'BD3'},
+        {type: 'MD', pos: 37.0, label: 'MD7'},
+        {type: 'MD', pos: 53.5, label: 'MD8'},
+        {type: 'MD', pos: 105.1, label: 'MD3'},
+        {type: 'MD', pos: 173.4, label: 'MD4'}
+    ];
+
+    // Draw Jetty Line
+    ctx.beginPath();
+    ctx.moveTo(midX - (180 * scale), jettyY);
+    ctx.lineTo(midX + (180 * scale), jettyY);
+    ctx.strokeStyle = '#555';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Draw Dolphins
+    jettyPoints.forEach(p => {
+        const x = midX + (p.pos * scale);
+        
+        if (p.type === 'MD') {
+            ctx.beginPath();
+            ctx.arc(x, jettyY, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = '#555';
+            ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.font = '10px Arial';
+            ctx.fillText(p.label, x - 10, jettyY - 10);
+        } else if (p.type === 'BD') {
+            ctx.fillStyle = '#4caf50'; // Green for fenders
+            ctx.fillRect(x - 6, jettyY - 6, 12, 12);
+            ctx.fillStyle = '#000';
+            ctx.font = '10px Arial';
+            ctx.fillText(p.label, x - 10, jettyY - 10);
+        } else if (p.type === 'CL') {
+            // Manifold Center Line
+            ctx.beginPath();
+            ctx.moveTo(x, jettyY - 20);
+            ctx.lineTo(x, jettyY + 60);
+            ctx.strokeStyle = 'red';
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = 'red';
+            ctx.fillText('Manifold', x + 5, jettyY + 30);
+        }
+    });
+
+    // Draw Ship
+    const shipY = jettyY + 25; // Ship slightly below jetty
+    const bowX = midX - (fwd * scale); // Fwd is distance from manifold to bow (left)
+    const sternX = midX + (aft * scale); // Aft is distance from manifold to stern (right)
+    
+    // Hull shape
+    ctx.beginPath();
+    ctx.moveTo(bowX, shipY); // Bow tip
+    ctx.lineTo(bowX + 20, shipY + 20); // Widening
+    ctx.lineTo(sternX - 10, shipY + 20); // Parallel side
+    ctx.lineTo(sternX, shipY + 10); // Stern curve
+    ctx.lineTo(sternX - 10, shipY); // Stern curve back
+    ctx.lineTo(bowX + 20, shipY); // Parallel side top
+    ctx.closePath();
+    
+    ctx.fillStyle = 'rgba(25, 118, 210, 0.3)';
+    ctx.fill();
+    ctx.strokeStyle = '#1976d2';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Labels for Ship
+    ctx.fillStyle = '#1976d2';
+    ctx.font = 'bold 12px Arial';
+    ctx.fillText('FWD', bowX, shipY - 5);
+    ctx.fillText('AFT', sternX - 20, shipY - 5);
+
+    // Draw Ruler (Scale) at bottom
+    const rulerY = height - 30;
+    ctx.beginPath();
+    ctx.moveTo(10, rulerY);
+    ctx.lineTo(width - 10, rulerY);
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Ticks every 20m (40px) starting from center
+    // Draw center 0
+    ctx.fillText("0m", midX - 5, rulerY + 15);
+    ctx.beginPath(); ctx.moveTo(midX, rulerY); ctx.lineTo(midX, rulerY + 5); ctx.stroke();
+
+    // Positive and Negative ticks
+    for (let m = 20; m <= 180; m += 20) {
+        let px = m * scale;
+        // Right side
+        if (midX + px < width) {
+            ctx.beginPath(); ctx.moveTo(midX + px, rulerY); ctx.lineTo(midX + px, rulerY + 5); ctx.stroke();
+            ctx.fillText(m, midX + px - 5, rulerY + 15);
+        }
+        // Left side
+        if (midX - px > 0) {
+            ctx.beginPath(); ctx.moveTo(midX - px, rulerY); ctx.lineTo(midX - px, rulerY + 5); ctx.stroke();
+            ctx.fillText("-" + m, midX - px - 10, rulerY + 15);
+        }
+    }
+    
+    document.getElementById('plot-container').style.display = 'block';
+  }
+
   function checkAfmeren() {
     const fwd = parseFloat(document.getElementById('fwd').value) || 0;
     const aft = parseFloat(document.getElementById('aft').value) || 0;
@@ -381,18 +520,13 @@
        html += '<div style="text-align:center; color:#777; font-size:0.8rem;">Vul LOA in.</div>';
     }
 
-    // --- MEERPATROON (MOORING) LOGIC ---
+    // Meerpatroon
     html += '<div class="section-title">Meerpatroon (Mooring Pattern)</div>';
     if(deadweight > 0) {
-      let l, b, s; // Lines (Head/Stern), Breast, Spring
-      
-      if(deadweight < 20000) {
-        l = 2; b = 2; s = 2;
-      } else if(deadweight <= 40000) {
-        l = 2; b = 3; s = 2;
-      } else {
-        l = 3; b = 3; s = 2;
-      }
+      let l, b, s;
+      if(deadweight < 20000) { l = 2; b = 2; s = 2; } 
+      else if(deadweight <= 40000) { l = 2; b = 3; s = 2; } 
+      else { l = 3; b = 3; s = 2; }
 
       html += `
         <div class="arm-row">
@@ -424,6 +558,11 @@
     const resDiv = document.getElementById('resultaten');
     resDiv.innerHTML = html;
     resDiv.classList.add('visible');
+    
+    // Draw visual plot
+    if (fwd > 0 && aft > 0) {
+        drawPlot(fwd, aft);
+    }
   }
 </script>
 </body>
