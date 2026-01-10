@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 5.2 - Exact Layout</title>
+  <title>ShipFit 5.3 - Exact Layout</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -95,7 +95,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 5.2</h1>
+    <h1>ShipFit 5.3</h1>
   </header>
 
   <div class="container">
@@ -316,7 +316,7 @@
     </svg>`;
   }
 
-  // --- PLOT UPDATE: Versie 5.2 - MD4 naar beneden ---
+  // --- PLOT UPDATE: Versie 5.3 - C5 op dezelfde lijn als BD2/BD3 ---
   function drawPlot(fwd, aft) {
     const canvas = document.getElementById('jettyCanvas');
     const ctx = canvas.getContext('2d');
@@ -330,14 +330,18 @@
     const scale = 2.4; 
     
     // Y-Coordinaten (Bovenaanzicht)
-    // Canvas: 0 = boven, Hoge waarden = beneden (richting water)
+    // Berthing line = 160.
     const yBerthing = 160; 
-    const yPlatform = 90;  
-    const yPlatformFront = 140; 
+    
+    // C5 Platform
+    // De VOORKANT van C5 (laadarmen) komt nu op de Berthing Line (160)
+    // Platform is 60 diep in tekening, dus achterkant is op 100.
+    const yPlatformFront = 160; 
+    const yPlatform = 100;      
 
-    const yMD_Inner = 110;  // Dichtbij
-    const yMD_Outer = 70;   // Ver weg (Standaard voor MD1,2,3)
-    const yMD4_Custom = 90; // NIEUW: MD4 iets lager dan MD3, zoals op tekening
+    const yMD_Inner = 110;  
+    const yMD_Outer = 70;   
+    const yMD4_Custom = 90; 
     
     const points = [
       {id: 'MD1', x: -173.9, y: yMD_Outer, type: 'MD'}, 
@@ -352,7 +356,7 @@
       {id: 'BD4', x: 53.5,   y: yBerthing, type: 'BD'},
       {id: 'MD8', x: 79.0,   y: yMD_Inner, type: 'MD'},
       {id: 'MD3', x: 105.1,  y: yMD_Outer, type: 'MD'}, 
-      {id: 'MD4', x: 173.4,  y: yMD4_Custom, type: 'MD'} // Aangepaste Y
+      {id: 'MD4', x: 173.4,  y: yMD4_Custom, type: 'MD'} 
     ];
 
     // 1. Teken Walkways
@@ -367,33 +371,38 @@
     ctx.lineTo(midX + (-57.2 * scale), yBerthing); 
     ctx.lineTo(midX + (-37.0 * scale), yMD_Inner); 
     ctx.lineTo(midX + (-25.2 * scale), yBerthing); 
+    // Naar Platform (nu op dezelfde lijn, dus horizontale streep)
     ctx.lineTo(midX + (-20 * scale), yPlatformFront); 
 
     // Rechts:
     ctx.moveTo(midX + (20 * scale), yPlatformFront); 
+    // Naar BD3 (Horizontale streep)
     ctx.lineTo(midX + (24.9 * scale), yBerthing); 
     ctx.lineTo(midX + (37.0 * scale), yMD_Inner); 
     ctx.lineTo(midX + (53.5 * scale), yBerthing); 
     ctx.lineTo(midX + (79.0 * scale), yMD_Inner); 
     ctx.lineTo(midX + (105.1 * scale), yMD_Outer); 
-    ctx.lineTo(midX + (173.4 * scale), yMD4_Custom); // Naar nieuwe MD4 positie
+    ctx.lineTo(midX + (173.4 * scale), yMD4_Custom); 
     
     ctx.stroke();
 
-    // 2. Platform C5
+    // 2. Platform C5 (Aangepast: Voorkant gelijk met berthing line)
     ctx.fillStyle = '#ccc';
     ctx.strokeStyle = '#444';
     ctx.lineWidth = 2;
+    // Tekent rechthoek van y=100 tot y=160 (60 hoog)
     ctx.fillRect(midX - (20 * scale), yPlatform, 40 * scale, 60);
     ctx.strokeRect(midX - (20 * scale), yPlatform, 40 * scale, 60);
     
+    // C5 Label & Laadarmen
     ctx.fillStyle = '#b71c1c';
-    ctx.fillRect(midX - 4, yPlatform + 20, 3, 25);
-    ctx.fillRect(midX + 1, yPlatform + 20, 3, 25);
+    ctx.fillRect(midX - 4, yPlatformFront - 10, 3, 20); // Armen iets naar binnen zodat ze zichtbaar zijn op grijs
+    ctx.fillRect(midX + 1, yPlatformFront - 10, 3, 20);
+    
     ctx.font = 'bold 11px Arial';
     ctx.fillStyle = '#000';
     ctx.textAlign = 'center';
-    ctx.fillText("C5", midX, yPlatform + 15);
+    ctx.fillText("C5", midX, yPlatform + 30); // Centraal in blok
 
     // 3. Dolphins
     points.forEach(p => {
