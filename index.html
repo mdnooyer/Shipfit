@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 5.7 - Dual Plot (SB & PS)</title>
+  <title>ShipFit 5.8 - Select Arm & Plot</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
   <style>
-    :root { --primary: #1976d2; --bg: #f4f6f8; --surface: #ffffff; --text: #333; --border: #ccc; --success-bg: #e8f5e9; --success-text: #1b5e20; --error-bg: #ffebee; --error-text: #c62828; }
+    :root { --primary: #1976d2; --bg: #f4f6f8; --surface: #ffffff; --text: #333; --border: #ccc; --success-bg: #e8f5e9; --success-text: #1b5e20; --error-bg: #ffebee; --error-text: #c62828; --accent: #ff9800; }
     body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--text); }
     header { background: var(--primary); color: white; padding: 15px 0; text-align: center; display: flex; justify-content: center; align-items: center; gap: 15px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     header img { height: 50px; background: white; padding: 4px; border-radius: 4px; }
@@ -27,10 +27,18 @@
     .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: #555; }
     .form-group input { padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; }
     
+    /* Nieuwe stijlen voor arm selectie */
+    .arm-selection-group { background: #fafafa; border: 1px solid #eee; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+    .radio-options { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; margin-top: 5px; }
+    .radio-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; }
+    .radio-label input { width: 20px; height: 20px; cursor: pointer; }
+
     .buttons { display: flex; justify-content: center; gap: 15px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
     button { padding: 12px 28px; border: none; border-radius: 5px; font-size: 1rem; font-weight: 600; cursor: pointer; }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-secondary { background: #e0e0e0; color: #333; }
+    .btn-action { background: var(--accent); color: #fff; } /* Oranje knop */
+    .btn-action:hover { background: #f57c00; }
     .btn-pdf { background: #d84315; color: white; }
 
     #resultaten { margin-top: 30px; display: none; }
@@ -97,7 +105,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 5.7</h1>
+    <h1>ShipFit 5.8</h1>
   </header>
 
   <div class="container">
@@ -137,9 +145,20 @@
         <div class="form-group"></div>
       </div>
 
+      <div class="arm-selection-group">
+        <label>Selecteer Laadarm voor Meerplan:</label>
+        <div class="radio-options">
+            <label class="radio-label"><input type="radio" name="selectedArm" value="4"> Arm 4</label>
+            <label class="radio-label"><input type="radio" name="selectedArm" value="5"> Arm 5</label>
+            <label class="radio-label"><input type="radio" name="selectedArm" value="7"> Arm 7</label>
+            <label class="radio-label"><input type="radio" name="selectedArm" value="8"> Arm 8</label>
+        </div>
+      </div>
+
       <div class="buttons">
         <button type="button" class="btn-secondary" onclick="resetForm()">Wis Alles</button>
         <button type="button" class="btn-primary" onclick="checkAfmeren()">Controleer</button>
+        <button type="button" class="btn-action" onclick="maakMeerplan()">Maak Meerplan</button>
         <button type="button" class="btn-pdf" onclick="createPDF()">Download PDF</button>
       </div>
     </form>
@@ -164,6 +183,14 @@
 
 <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+  // Exacte laadarm posities t.o.v. Center Line (0)
+  const armPositions = {
+    '4': 4.15,
+    '5': 6.74,
+    '7': 12.38,
+    '8': 14.97
+  };
 
   function initApp() {
     if (sessionStorage.getItem('shipfit_auth') !== 'true') {
@@ -311,6 +338,11 @@
       for (const [key, value] of Object.entries(data)) {
         const el = document.getElementById(key);
         if (el) el.value = value;
+        // Restore radio button
+        if(key === 'selectedArm' && value) {
+            const radio = document.querySelector(`input[name="selectedArm"][value="${value}"]`);
+            if(radio) radio.checked = true;
+        }
       }
     }
   }
@@ -322,7 +354,15 @@
   }
 
   function createPDF() {
-    if (!document.getElementById('resultaten').classList.contains('visible')) checkAfmeren();
+    // Zorg dat alles zichtbaar is voor print
+    const res = document.getElementById('resultaten');
+    const plot = document.getElementById('plot-container');
+    
+    if (!res.classList.contains('visible') && !plot.style.display === 'block') {
+        alert("Voer eerst een controle of meerplan uit.");
+        return;
+    }
+    
     const shipName = document.getElementById('shipName').value || 'Report';
     const imo = document.getElementById('imo').value || '';
     const oldTitle = document.title;
@@ -342,9 +382,8 @@
     </svg>`;
   }
 
-  // --- REUSABLE JETTY DRAWING FUNCTION ---
-  // side: 'SB' (Bow Left) or 'PS' (Bow Right)
-  function drawJettyScene(ctx, fwd, aft, side) {
+  // --- DRAWING ENGINE ---
+  function drawJettyScene(ctx, fwd, aft, side, manifoldOffset) {
     const width = ctx.canvas.width;
     const height = ctx.canvas.height;
     
@@ -380,7 +419,6 @@
     ctx.beginPath();
     ctx.strokeStyle = '#777';
     ctx.lineWidth = 2;
-    // Left
     ctx.moveTo(midX + (-173.9 * scale), yMD_Outer); 
     ctx.lineTo(midX + (-104.4 * scale), yMD_Outer); 
     ctx.lineTo(midX + (-77.0 * scale), yMD_Inner); 
@@ -388,7 +426,6 @@
     ctx.lineTo(midX + (-37.0 * scale), yMD_Inner); 
     ctx.lineTo(midX + (-25.2 * scale), yBerthing); 
     ctx.lineTo(midX + (-20 * scale), yPlatformFront); 
-    // Right
     ctx.moveTo(midX + (20 * scale), yPlatformFront); 
     ctx.lineTo(midX + (24.9 * scale), yBerthing); 
     ctx.lineTo(midX + (37.0 * scale), yMD_Inner); 
@@ -407,10 +444,10 @@
     
     // Laadarmen
     const arms = [
-       { id: '4', x: -25.2 + 29.35, color: '#d32f2f' }, 
-       { id: '5', x: -25.2 + 31.94, color: '#c62828' }, 
-       { id: '7', x: -25.2 + 37.58, color: '#b71c1c' }, 
-       { id: '8', x: -25.2 + 40.17, color: '#8e0000' }  
+       { id: '4', x: armPositions['4'], color: '#d32f2f' }, 
+       { id: '5', x: armPositions['5'], color: '#c62828' }, 
+       { id: '7', x: armPositions['7'], color: '#b71c1c' }, 
+       { id: '8', x: armPositions['8'], color: '#8e0000' }  
     ];
     ctx.font = 'bold 10px Arial';
     ctx.textAlign = 'center';
@@ -440,39 +477,38 @@
         }
     });
 
-    // --- SHIP DRAWING ---
+    // --- SCHIP TEKENEN MET OFFSET ---
+    // manifoldOffset is de positie van de laadarm op de wal (bijv. +12.38).
+    // De manifold van het schip (het 0-punt op het schip) moet hiermee uitlijnen.
+    const shipZeroX = midX + (manifoldOffset * scale);
+
     const shipY = yBerthing + 15; 
     let bowX, sternX;
 
-    // Logic for Orientation
     if (side === 'SB') {
-        // SB: Bow to Left (Negative), Stern to Right (Positive)
-        bowX = midX - (fwd * scale);
-        sternX = midX + (aft * scale);
+        // SB: Boeg Links, Hek Rechts. Manifold op shipZeroX.
+        bowX = shipZeroX - (fwd * scale);
+        sternX = shipZeroX + (aft * scale);
     } else {
-        // PS: Bow to Right (Positive), Stern to Left (Negative)
-        bowX = midX + (fwd * scale);
-        sternX = midX - (aft * scale);
+        // PS: Boeg Rechts, Hek Links. Manifold op shipZeroX.
+        bowX = shipZeroX + (fwd * scale);
+        sternX = shipZeroX - (aft * scale);
     }
     
     ctx.beginPath();
-    
     if (side === 'SB') {
-        // Drawing Left-to-Right (Bow is Left)
         ctx.moveTo(bowX, shipY); 
-        ctx.bezierCurveTo(bowX - 10, shipY, bowX + 20, shipY + 40, bowX + 40, shipY + 40); // Pointy Bow Left
+        ctx.bezierCurveTo(bowX - 10, shipY, bowX + 20, shipY + 40, bowX + 40, shipY + 40); 
         ctx.lineTo(sternX - 20, shipY + 40);
-        ctx.bezierCurveTo(sternX, shipY + 40, sternX + 5, shipY + 20, sternX, shipY); // Flat Stern Right
+        ctx.bezierCurveTo(sternX, shipY + 40, sternX + 5, shipY + 20, sternX, shipY); 
         ctx.lineTo(bowX, shipY);
     } else {
-        // Drawing Right-to-Left (Bow is Right)
         ctx.moveTo(bowX, shipY);
-        ctx.bezierCurveTo(bowX + 10, shipY, bowX - 20, shipY + 40, bowX - 40, shipY + 40); // Pointy Bow Right
+        ctx.bezierCurveTo(bowX + 10, shipY, bowX - 20, shipY + 40, bowX - 40, shipY + 40); 
         ctx.lineTo(sternX + 20, shipY + 40);
-        ctx.bezierCurveTo(sternX, shipY + 40, sternX - 5, shipY + 20, sternX, shipY); // Flat Stern Left
+        ctx.bezierCurveTo(sternX, shipY + 40, sternX - 5, shipY + 20, sternX, shipY); 
         ctx.lineTo(bowX, shipY);
     }
-
     ctx.closePath();
     ctx.fillStyle = 'rgba(25, 118, 210, 0.3)'; ctx.fill();
     ctx.strokeStyle = '#1565c0'; ctx.lineWidth = 2; ctx.stroke();
@@ -481,16 +517,16 @@
     const pbLen = parseFloat(document.getElementById('pbTotal').value) || 0;
     if(pbLen > 0) {
         ctx.beginPath();
-        const pbStart = midX - (pbLen/2 * scale);
-        const pbEnd = midX + (pbLen/2 * scale);
+        const pbStart = shipZeroX - (pbLen/2 * scale); // Centered on manifold
+        const pbEnd = shipZeroX + (pbLen/2 * scale);
         ctx.moveTo(pbStart, shipY + 45); ctx.lineTo(pbEnd, shipY + 45);
         ctx.strokeStyle = '#e65100'; ctx.lineWidth = 4; ctx.stroke();
-        ctx.fillStyle = '#e65100'; ctx.fillText(`PB: ${pbLen}m`, midX, shipY + 58);
+        ctx.fillStyle = '#e65100'; ctx.fillText(`PB: ${pbLen}m`, shipZeroX, shipY + 58);
     }
 
-    // Manifold
+    // Manifold Lijn (nu op shipZeroX, niet midX)
     ctx.beginPath();
-    ctx.moveTo(midX, shipY - 10); ctx.lineTo(midX, shipY + 50);
+    ctx.moveTo(shipZeroX, shipY - 10); ctx.lineTo(shipZeroX, shipY + 50);
     ctx.strokeStyle = 'red'; ctx.setLineDash([5, 3]); ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
 
     // Ruler
@@ -513,19 +549,22 @@
     }
   }
 
-  function drawDualPlots(fwd, aft) {
+  function drawDualPlots(fwd, aft, offset) {
     const canvasSB = document.getElementById('canvasSB');
     const ctxSB = canvasSB.getContext('2d');
-    drawJettyScene(ctxSB, fwd, aft, 'SB'); // Plot 1
+    drawJettyScene(ctxSB, fwd, aft, 'SB', offset); 
 
     const canvasPS = document.getElementById('canvasPS');
     const ctxPS = canvasPS.getContext('2d');
-    drawJettyScene(ctxPS, fwd, aft, 'PS'); // Plot 2
+    drawJettyScene(ctxPS, fwd, aft, 'PS', offset); 
     
     document.getElementById('plot-container').style.display = 'block';
   }
 
+  // --- LOGICA FUNCTIES ---
+
   function checkAfmeren() {
+    // Alleen validatie en tekstuele resultaten
     const fwd = parseFloat(document.getElementById('fwd').value) || 0;
     const aft = parseFloat(document.getElementById('aft').value) || 0;
     const pb = parseFloat(document.getElementById('pbTotal').value) || 0;
@@ -533,6 +572,9 @@
     const freeboard = parseFloat(document.getElementById('freeboard').value) || 0;
     const manifold = parseFloat(document.getElementById('manifold').value) || 0;
     const deadweight = parseFloat(document.getElementById('deadweight').value) || 0;
+
+    // Verberg plot als die open stond
+    document.getElementById('plot-container').style.display = 'none';
 
     let html = '';
     html += '<div class="section-title">Controles & Limieten</div><div class="result-grid">';
@@ -545,7 +587,7 @@
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
     html += '</div>';
 
-    // TERUGGEZET NAAR v5.3 LOGICA (Op verzoek)
+    // Rekenregels uit v5.3
     const armConfig = [
       { name: 'Arm 4', reqFwd: 28.35, reqAft: 19.68 },
       { name: 'Arm 5', reqFwd: 30.94, reqAft: 17.09 },
@@ -634,10 +676,38 @@
     const resDiv = document.getElementById('resultaten');
     resDiv.innerHTML = html;
     resDiv.classList.add('visible');
+  }
+
+  function maakMeerplan() {
+    // 1. Check data
+    const fwd = parseFloat(document.getElementById('fwd').value) || 0;
+    const aft = parseFloat(document.getElementById('aft').value) || 0;
     
-    if (fwd > 0 && aft > 0) {
-        drawDualPlots(fwd, aft);
+    if (fwd === 0 || aft === 0) {
+        alert("Vul eerst de scheepsgegevens in of upload een Q88.");
+        return;
     }
+
+    // 2. Check geselecteerde arm
+    const selected = document.querySelector('input[name="selectedArm"]:checked');
+    if (!selected) {
+        alert("Selecteer eerst een laadarm (4, 5, 7 of 8) in de selectievakjes.");
+        return;
+    }
+
+    // 3. Update localStorage voor selected arm
+    localStorage.setItem('shipfit_selected_arm', selected.value);
+    
+    // 4. Haal positie op en teken
+    const armId = selected.value;
+    const offset = armPositions[armId]; // Bijv 4.15
+    
+    // Zorg dat resultatenblok er is (voert check uit indien nodig)
+    if(!document.getElementById('resultaten').classList.contains('visible')) {
+        checkAfmeren();
+    }
+
+    drawDualPlots(fwd, aft, offset);
   }
 </script>
 </body>
