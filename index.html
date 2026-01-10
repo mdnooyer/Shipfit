@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 6.2 - Realistic Tanker Hull</title>
+  <title>ShipFit 6.3 - Refined Labels & Position</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -104,7 +104,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 6.2</h1>
+    <h1>ShipFit 6.3</h1>
   </header>
 
   <div class="container">
@@ -277,7 +277,7 @@
   function createPDF() { const res = document.getElementById('resultaten'); const plot = document.getElementById('plot-container'); if (!res.classList.contains('visible') && !plot.style.display === 'block') { alert("Voer eerst een controle of meerplan uit."); return; } const shipName = document.getElementById('shipName').value || 'Report'; const imo = document.getElementById('imo').value || ''; const oldTitle = document.title; document.title = `${shipName}_${imo}`; window.print(); setTimeout(() => { document.title = oldTitle; }, 1000); }
   function getTugSVG(tonnage) { return `<svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg"><path d="M5,55 Q25,60 50,55 T95,55" stroke="#90caf9" stroke-width="2" fill="none" opacity="0.6"/><path d="M10,40 Q5,55 25,55 L85,55 Q95,45 90,35 L10,35 Z" fill="#37474f"/><path d="M25,35 L25,15 L65,15 L65,35 Z" fill="#546e7a"/><rect x="30" y="18" width="15" height="8" fill="#b3e5fc"/><rect x="50" y="10" width="10" height="25" fill="#263238"/><text x="50" y="50" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="14" fill="#ffffff">${tonnage}t</text></svg>`; }
 
-  // --- DRAWING ENGINE (UPDATED V6.2 - REALISTIC TANKER) ---
+  // --- DRAWING ENGINE (UPDATED V6.3 - LABELS & POSITION) ---
   function drawJettyScene(ctx, fwd, aft, side, manifoldOffset) {
     const width = ctx.canvas.width; const height = ctx.canvas.height;
     ctx.clearRect(0, 0, width, height);
@@ -292,9 +292,26 @@
     ctx.fillStyle='#ccc'; ctx.strokeStyle='#444'; ctx.fillRect(midX-(20*scale),yPlatform,40*scale,60); ctx.strokeRect(midX-(20*scale),yPlatform,40*scale,60);
     const arms=[{id:'4',x:armPositions['4'],color:'#d32f2f'},{id:'5',x:armPositions['5'],color:'#c62828'},{id:'7',x:armPositions['7'],color:'#b71c1c'},{id:'8',x:armPositions['8'],color:'#8e0000'}];
     ctx.font='bold 10px Arial'; ctx.textAlign='center'; arms.forEach(arm=>{ let ax=midX+(arm.x*scale); ctx.fillStyle=arm.color; ctx.fillRect(ax-2,yPlatformFront-15,4,15); ctx.fillStyle='#000'; ctx.fillText(arm.id,ax,yPlatformFront-20); });
-    points.forEach(p=>{ const px=midX+(p.x*scale); const py=p.y; ctx.beginPath(); if(p.type==='MD'){ ctx.arc(px,py,5,0,2*Math.PI); ctx.fillStyle='#555'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke(); ctx.fillStyle='#000'; ctx.font='10px Arial'; ctx.textAlign='center'; ctx.fillText(p.id,px,py-10); ctx.fillStyle='#666'; ctx.font='9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1)+"m",px,py-22); } else { ctx.rect(px-6,py-6,12,12); ctx.fillStyle='#2e7d32'; ctx.fill(); ctx.stroke(); ctx.fillStyle='#000'; ctx.font='10px Arial'; ctx.textAlign='center'; ctx.fillText(p.id,px,py+18); ctx.fillStyle='#666'; ctx.font='9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1)+"m",px,py+28); } });
+    
+    // Dolphins met aangepaste labels (V6.3)
+    points.forEach(p=>{ 
+        const px=midX+(p.x*scale); const py=p.y; ctx.beginPath(); 
+        if(p.type==='MD'){ 
+            ctx.arc(px,py,5,0,2*Math.PI); ctx.fillStyle='#555'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke(); 
+            ctx.fillStyle='#000'; ctx.font='10px Arial'; ctx.textAlign='center'; ctx.fillText(p.id,px,py-10); 
+            ctx.fillStyle='#666'; ctx.font='9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1)+"m",px,py-22); 
+        } else { // BD Type
+            ctx.rect(px-6,py-6,12,12); ctx.fillStyle='#2e7d32'; ctx.fill(); ctx.stroke(); 
+            ctx.fillStyle='#000'; ctx.font='10px Arial'; 
+            // Specifieke uitlijning voor BD1/2 (Links) en BD3/4 (Rechts)
+            if(p.id === 'BD1' || p.id === 'BD2') { ctx.textAlign='right'; ctx.fillText(p.id, px-10, py+4); }
+            else if(p.id === 'BD3' || p.id === 'BD4') { ctx.textAlign='left'; ctx.fillText(p.id, px+10, py+4); }
+            ctx.textAlign='center'; // Reset default
+            ctx.fillStyle='#666'; ctx.font='9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1)+"m",px,py+28); 
+        } 
+    });
 
-    // --- SCHIP TEKENEN (V6.2 UPDATES) ---
+    // --- SCHIP TEKENEN (V6.3 UPDATES - POSITIE & CM LABEL) ---
     const shipZeroX = midX + (manifoldOffset * scale);
     const beamVal = parseFloat(document.getElementById('beam').value) || 32; 
     const bowToCmVal = parseFloat(document.getElementById('bowToCm').value) || (fwd + 20);
@@ -302,10 +319,12 @@
     const bowSectionLen = Math.max(0, bowToCmVal - fwd);
     const sternSectionLen = Math.max(0, sternToCmVal - aft);
 
-    const shipCenterY = yBerthing + 45;
-    const halfBeamSc = (beamVal / 2) * scale;
-    const shipTopY = shipCenterY - halfBeamSc;
-    const shipBotY = shipCenterY + halfBeamSc;
+    // NIEUWE Y-POSITIE (V6.3): Top fenderlijn vastzetten net onder de BD blokjes (y=166)
+    const shipTopY = yBerthing + 10; // 4 pixels ruimte onder de blokjes
+    const beamSc = beamVal * scale;
+    const shipBotY = shipTopY + beamSc;
+    const shipCenterY = shipTopY + (beamSc / 2);
+    const halfBeamSc = beamSc / 2;
 
     ctx.lineWidth = 2;
     const blueStyle = 'rgba(25, 118, 210, 0.8)'; const grayStyle = 'rgba(158, 158, 158, 0.9)'; 
@@ -315,20 +334,15 @@
     if (side === 'SB') { // Boeg Links
         pbStartX = shipZeroX - (fwd * scale); pbEndX = shipZeroX + (aft * scale);
         bowTipX = pbStartX - (bowSectionLen * scale); sternTipX = pbEndX + (sternSectionLen * scale);
-
-        // 1. Hek (Grijs, gedetailleerd rond - Rechts)
+        // Hek
         ctx.fillStyle = grayStyle; ctx.beginPath(); ctx.moveTo(pbEndX, shipTopY);
         ctx.bezierCurveTo(sternTipX, shipTopY + (halfBeamSc*0.2), sternTipX, shipBotY - (halfBeamSc*0.2), pbEndX, shipBotY);
         ctx.lineTo(pbEndX, shipTopY); ctx.closePath(); ctx.fill(); ctx.stroke();
-        
-        // 2. Parallel Body (Blauw Rect)
+        // PB
         ctx.fillStyle = blueStyle; ctx.strokeStyle = borderStyle;
-        ctx.fillRect(pbStartX, shipTopY, (fwd+aft)*scale, beamVal*scale);
-        ctx.strokeRect(pbStartX, shipTopY, (fwd+aft)*scale, beamVal*scale);
-
-        // 3. Boeg (Grijs, realistisch rond/puntig - Links)
-        ctx.fillStyle = grayStyle; ctx.beginPath();
-        ctx.moveTo(pbStartX, shipTopY);
+        ctx.fillRect(pbStartX, shipTopY, (fwd+aft)*scale, beamSc); ctx.strokeRect(pbStartX, shipTopY, (fwd+aft)*scale, beamSc);
+        // Boeg
+        ctx.fillStyle = grayStyle; ctx.beginPath(); ctx.moveTo(pbStartX, shipTopY);
         ctx.bezierCurveTo(bowTipX + (bowSectionLen*scale*0.5), shipTopY, bowTipX, shipCenterY - (halfBeamSc*0.3), bowTipX, shipCenterY);
         ctx.bezierCurveTo(bowTipX, shipCenterY + (halfBeamSc*0.3), bowTipX + (bowSectionLen*scale*0.5), shipBotY, pbStartX, shipBotY);
         ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -336,29 +350,25 @@
     } else { // Boeg Rechts
         pbStartX = shipZeroX - (aft * scale); pbEndX = shipZeroX + (fwd * scale);
         sternTipX = pbStartX - (sternSectionLen * scale); bowTipX = pbEndX + (bowSectionLen * scale);
-
-        // 1. Hek (Grijs, gedetailleerd rond - Links)
+        // Hek
         ctx.fillStyle = grayStyle; ctx.beginPath(); ctx.moveTo(pbStartX, shipTopY);
         ctx.bezierCurveTo(sternTipX, shipTopY + (halfBeamSc*0.2), sternTipX, shipBotY - (halfBeamSc*0.2), pbStartX, shipBotY);
         ctx.lineTo(pbStartX, shipTopY); ctx.closePath(); ctx.fill(); ctx.stroke();
-
-        // 2. Parallel Body (Blauw Rect)
+        // PB
         ctx.fillStyle = blueStyle; ctx.strokeStyle = borderStyle;
-        ctx.fillRect(pbStartX, shipTopY, (fwd+aft)*scale, beamVal*scale);
-        ctx.strokeRect(pbStartX, shipTopY, (fwd+aft)*scale, beamVal*scale);
-
-        // 3. Boeg (Grijs, realistisch rond/puntig - Rechts)
-        ctx.fillStyle = grayStyle; ctx.beginPath();
-        ctx.moveTo(pbEndX, shipTopY);
+        ctx.fillRect(pbStartX, shipTopY, (fwd+aft)*scale, beamSc); ctx.strokeRect(pbStartX, shipTopY, (fwd+aft)*scale, beamSc);
+        // Boeg
+        ctx.fillStyle = grayStyle; ctx.beginPath(); ctx.moveTo(pbEndX, shipTopY);
         ctx.bezierCurveTo(bowTipX - (bowSectionLen*scale*0.5), shipTopY, bowTipX, shipCenterY - (halfBeamSc*0.3), bowTipX, shipCenterY);
         ctx.bezierCurveTo(bowTipX, shipCenterY + (halfBeamSc*0.3), bowTipX - (bowSectionLen*scale*0.5), shipBotY, pbEndX, shipBotY);
         ctx.closePath(); ctx.fill(); ctx.stroke();
     }
 
-    // CM Lijn & Label
+    // CM Lijn & Label (V6.3: Label rechts van de lijn)
     ctx.beginPath(); ctx.moveTo(shipZeroX, shipTopY); ctx.lineTo(shipZeroX, shipBotY);
     ctx.strokeStyle = '#d32f2f'; ctx.setLineDash([5, 3]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = '#d32f2f'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; ctx.fillText("CM", shipZeroX, shipTopY - 5);
+    ctx.fillStyle = '#d32f2f'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'left'; 
+    ctx.fillText("CM", shipZeroX + 5, shipCenterY); // Rechts van de lijn, verticaal gecentreerd
 
     // PB Lijn
     const pbLen = parseFloat(document.getElementById('pbTotal').value) || 0;
@@ -366,13 +376,13 @@
         ctx.beginPath(); const pbStart = shipZeroX - (pbLen/2 * scale); const pbEnd = shipZeroX + (pbLen/2 * scale);
         ctx.moveTo(pbStart, shipBotY + 15); ctx.lineTo(pbEnd, shipBotY + 15);
         ctx.strokeStyle = '#e65100'; ctx.lineWidth = 4; ctx.stroke();
-        ctx.fillStyle = '#e65100'; ctx.fillText(`PB: ${pbLen}m`, shipZeroX, shipBotY + 28);
+        ctx.fillStyle = '#e65100'; ctx.textAlign = 'center'; ctx.fillText(`PB: ${pbLen}m`, shipZeroX, shipBotY + 28);
     }
 
     // Ruler
     const rulerY = height - 40;
     ctx.beginPath(); ctx.moveTo(20, rulerY); ctx.lineTo(width - 20, rulerY); ctx.strokeStyle = '#333'; ctx.lineWidth = 1; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(midX, rulerY - 5); ctx.lineTo(midX, rulerY + 5); ctx.stroke(); ctx.fillStyle = '#000'; ctx.font = '10px Arial'; ctx.fillText("0", midX - 3, rulerY + 15);
+    ctx.beginPath(); ctx.moveTo(midX, rulerY - 5); ctx.lineTo(midX, rulerY + 5); ctx.stroke(); ctx.fillStyle = '#000'; ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.fillText("0", midX - 3, rulerY + 15);
     ctx.font = '9px Arial'; for(let m = 10; m <= 190; m += 10) { let px = m * scale; if(midX + px < width - 10) { ctx.beginPath(); ctx.moveTo(midX + px, rulerY - 3); ctx.lineTo(midX + px, rulerY + 3); ctx.stroke(); if(m % 20 === 0) ctx.fillText(m, midX + px - 6, rulerY + 15); } if(midX - px > 10) { ctx.beginPath(); ctx.moveTo(midX - px, rulerY - 3); ctx.lineTo(midX - px, rulerY + 3); ctx.stroke(); if(m % 20 === 0) ctx.fillText("-" + m, midX - px - 10, rulerY + 15); }}
   }
 
