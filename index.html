@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 5.8 - Select Arm & Plot</title>
+  <title>ShipFit 5.9 - Beam Added</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -27,7 +27,6 @@
     .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: #555; }
     .form-group input { padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; }
     
-    /* Nieuwe stijlen voor arm selectie */
     .arm-selection-group { background: #fafafa; border: 1px solid #eee; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
     .radio-options { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; margin-top: 5px; }
     .radio-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; }
@@ -37,7 +36,7 @@
     button { padding: 12px 28px; border: none; border-radius: 5px; font-size: 1rem; font-weight: 600; cursor: pointer; }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-secondary { background: #e0e0e0; color: #333; }
-    .btn-action { background: var(--accent); color: #fff; } /* Oranje knop */
+    .btn-action { background: var(--accent); color: #fff; }
     .btn-action:hover { background: #f57c00; }
     .btn-pdf { background: #d84315; color: white; }
 
@@ -105,7 +104,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 5.8</h1>
+    <h1>ShipFit 5.9</h1>
   </header>
 
   <div class="container">
@@ -142,7 +141,7 @@
       <div class="row-flex">
         <div class="form-group"><label for="bowToCm">Bow to CM (1.33) [m]</label><input id="bowToCm" type="number" step="0.01" placeholder="BCM" oninput="saveData()"></div>
         <div class="form-group"><label for="sternToCm">Stern to CM (1.33) [m]</label><input id="sternToCm" type="number" step="0.01" placeholder="SCM" oninput="saveData()"></div>
-        <div class="form-group"></div>
+        <div class="form-group"><label for="beam">Beam (1.29) [m]</label><input id="beam" type="number" step="0.01" placeholder="Beam" oninput="saveData()"></div>
       </div>
 
       <div class="arm-selection-group">
@@ -252,6 +251,7 @@
         if(altImo) document.getElementById('imo').value = altImo[1];
     }
 
+    // Sectie 1.33: Bow to CM / Stern to CM
     const section133Match = cleanText.match(/1\.33(.*?)(?:1\.34|Parallel)/i);
     if (section133Match) {
         const numbers = section133Match[1].match(/(\d+(?:[.,]\d+)?)/g);
@@ -259,6 +259,14 @@
             document.getElementById('bowToCm').value = parseFloat(numbers[0].replace(',', '.'));
             document.getElementById('sternToCm').value = parseFloat(numbers[1].replace(',', '.'));
         }
+    }
+
+    // Sectie 1.29: Beam / Extreme breadth
+    const beamVal = findVal("1\\.29\\s.*?Extreme\\s+breadth");
+    if(beamVal) document.getElementById('beam').value = beamVal;
+    else {
+         const altBeam = findVal("Beam");
+         if(altBeam) document.getElementById('beam').value = altBeam;
     }
 
     const section134Match = cleanText.match(/1\.34(.*?)(?:1\.35|Tonnages)/i);
@@ -354,7 +362,6 @@
   }
 
   function createPDF() {
-    // Zorg dat alles zichtbaar is voor print
     const res = document.getElementById('resultaten');
     const plot = document.getElementById('plot-container');
     
@@ -478,8 +485,6 @@
     });
 
     // --- SCHIP TEKENEN MET OFFSET ---
-    // manifoldOffset is de positie van de laadarm op de wal (bijv. +12.38).
-    // De manifold van het schip (het 0-punt op het schip) moet hiermee uitlijnen.
     const shipZeroX = midX + (manifoldOffset * scale);
 
     const shipY = yBerthing + 15; 
