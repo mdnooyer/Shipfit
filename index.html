@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 5.1 - Exact Layout (Corrected MDs)</title>
+  <title>ShipFit 5.2 - Exact Layout</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -95,7 +95,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 5.1</h1>
+    <h1>ShipFit 5.2</h1>
   </header>
 
   <div class="container">
@@ -316,7 +316,7 @@
     </svg>`;
   }
 
-  // --- PLOT UPDATE: MD1/MD2 verder naar achteren ---
+  // --- PLOT UPDATE: Versie 5.2 - MD4 naar beneden ---
   function drawPlot(fwd, aft) {
     const canvas = document.getElementById('jettyCanvas');
     const ctx = canvas.getContext('2d');
@@ -330,19 +330,19 @@
     const scale = 2.4; 
     
     // Y-Coordinaten (Bovenaanzicht)
-    // Canvas: 0 = boven, Hoge waarden = beneden
+    // Canvas: 0 = boven, Hoge waarden = beneden (richting water)
     const yBerthing = 160; 
     const yPlatform = 90;  
     const yPlatformFront = 140; 
 
-    // NIEUW: Split MD's in Inner (Dichtbij) en Outer (Ver weg / naar achteren)
-    const yMD_Inner = 110;  // MD5, MD6, MD7, MD8
-    const yMD_Outer = 70;   // MD1, MD2, MD3, MD4 (Verder naar achteren geplaatst)
+    const yMD_Inner = 110;  // Dichtbij
+    const yMD_Outer = 70;   // Ver weg (Standaard voor MD1,2,3)
+    const yMD4_Custom = 90; // NIEUW: MD4 iets lager dan MD3, zoals op tekening
     
     const points = [
-      {id: 'MD1', x: -173.9, y: yMD_Outer, type: 'MD'}, // Verder naar achter
-      {id: 'MD2', x: -104.4, y: yMD_Outer, type: 'MD'}, // Verder naar achter
-      {id: 'MD5', x: -77.0,  y: yMD_Inner, type: 'MD'}, // Dichterbij
+      {id: 'MD1', x: -173.9, y: yMD_Outer, type: 'MD'}, 
+      {id: 'MD2', x: -104.4, y: yMD_Outer, type: 'MD'}, 
+      {id: 'MD5', x: -77.0,  y: yMD_Inner, type: 'MD'}, 
       {id: 'BD1', x: -57.2,  y: yBerthing, type: 'BD'},
       {id: 'MD6', x: -37.0,  y: yMD_Inner, type: 'MD'},
       {id: 'BD2', x: -25.2,  y: yBerthing, type: 'BD'},
@@ -351,32 +351,32 @@
       {id: 'MD7', x: 37.0,   y: yMD_Inner, type: 'MD'},
       {id: 'BD4', x: 53.5,   y: yBerthing, type: 'BD'},
       {id: 'MD8', x: 79.0,   y: yMD_Inner, type: 'MD'},
-      {id: 'MD3', x: 105.1,  y: yMD_Outer, type: 'MD'}, // Symmetrie
-      {id: 'MD4', x: 173.4,  y: yMD_Outer, type: 'MD'}  // Symmetrie
+      {id: 'MD3', x: 105.1,  y: yMD_Outer, type: 'MD'}, 
+      {id: 'MD4', x: 173.4,  y: yMD4_Custom, type: 'MD'} // Aangepaste Y
     ];
 
-    // 1. Teken Walkways (Met zigzag correctie)
+    // 1. Teken Walkways
     ctx.beginPath();
     ctx.strokeStyle = '#777';
     ctx.lineWidth = 2;
     
-    // Links: MD1(Outer) -> MD2(Outer) -> MD5(Inner) -> BD1 -> MD6(Inner) -> BD2 -> Platform
+    // Links:
     ctx.moveTo(midX + (-173.9 * scale), yMD_Outer); 
     ctx.lineTo(midX + (-104.4 * scale), yMD_Outer); 
-    ctx.lineTo(midX + (-77.0 * scale), yMD_Inner); // Zigzag
+    ctx.lineTo(midX + (-77.0 * scale), yMD_Inner); 
     ctx.lineTo(midX + (-57.2 * scale), yBerthing); 
     ctx.lineTo(midX + (-37.0 * scale), yMD_Inner); 
     ctx.lineTo(midX + (-25.2 * scale), yBerthing); 
     ctx.lineTo(midX + (-20 * scale), yPlatformFront); 
 
-    // Rechts: Platform -> BD3 -> MD7(Inner) -> BD4 -> MD8(Inner) -> MD3(Outer) -> MD4(Outer)
+    // Rechts:
     ctx.moveTo(midX + (20 * scale), yPlatformFront); 
     ctx.lineTo(midX + (24.9 * scale), yBerthing); 
     ctx.lineTo(midX + (37.0 * scale), yMD_Inner); 
     ctx.lineTo(midX + (53.5 * scale), yBerthing); 
     ctx.lineTo(midX + (79.0 * scale), yMD_Inner); 
-    ctx.lineTo(midX + (105.1 * scale), yMD_Outer); // Zigzag
-    ctx.lineTo(midX + (173.4 * scale), yMD_Outer); 
+    ctx.lineTo(midX + (105.1 * scale), yMD_Outer); 
+    ctx.lineTo(midX + (173.4 * scale), yMD4_Custom); // Naar nieuwe MD4 positie
     
     ctx.stroke();
 
