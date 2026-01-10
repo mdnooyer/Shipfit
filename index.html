@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 5.1 - Exact Plot</title>
+  <title>ShipFit 5.1 - Exact Layout</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -94,7 +94,7 @@
 <body onload="initApp()">
 
   <header>
-    <img src="zrlogo.png" alt="Zeeland Refinery Logo" onerror="this.style.display='none'">
+    <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
     <h1>ShipFit 5.1</h1>
   </header>
 
@@ -139,8 +139,8 @@
     <div id="resultaten"></div>
     
     <div id="plot-container" style="display:none;">
-      <div class="section-title" style="text-align:center;">Visuele Plot (Schaal 1 streepje = 20m)</div>
-      <canvas id="jettyCanvas" width="900" height="350"></canvas>
+      <div class="section-title" style="text-align:center;">Visuele Plot (Schaal 1 streepje = 10m)</div>
+      <canvas id="jettyCanvas" width="950" height="400"></canvas>
     </div>
 
   </div>
@@ -316,7 +316,7 @@
     </svg>`;
   }
 
-  // --- NIEUWE PLOT LOGICA MET CONNECTIES ---
+  // --- EXACTE PLOT LOGICA (AANGEPAST) ---
   function drawPlot(fwd, aft) {
     const canvas = document.getElementById('jettyCanvas');
     const ctx = canvas.getContext('2d');
@@ -326,20 +326,21 @@
     // Reset
     ctx.clearRect(0, 0, width, height);
     
+    // Schaal berekening
+    // We hebben ongeveer 360 meter breedte nodig (-180 tot +180). Canvas is 950 breed.
+    // 950 / 360 = 2.63 px per meter. We nemen 2.4 voor marge.
     const midX = width / 2;
-    const scale = 2.2; // Iets grotere schaal
+    const scale = 2.4; 
     
-    // Y-Coordinaten (top-down view)
-    // Berthing line = schip kant. MD's staan verder weg (kleinere Y in canvas als 0 boven is? Nee, laten we berthing line onder doen).
-    // Canvas: 0 is top.
-    const yBerthing = 180; // De lijn waar het schip ligt (fenders)
-    const yMD = 130;       // MD's staan naar achteren (verder landinwaarts)
-    const yPlatform = 120; // Platform iets naar achteren
+    // Y-Coordinaten (Bovenaanzicht)
+    // Berthing line = 0-punt van fender compressie (onder). 
+    // In Canvas: Y neemt toe naar beneden.
+    const yBerthing = 160; 
+    const yMD = 100;       // MD's staan "hoger" op het scherm (landinwaarts)
+    const yPlatform = 90;  // Platform achterkant
+    const yPlatformFront = 140; // Platform voorkant (loading arms)
     
-    // Coördinaten van de palen (t.o.v. Center Line)
-    // Left (negative) - Right (positive)
-    // Structuur: MD1 -> MD2 -> MD5 -> BD1 -> MD6 -> BD2 -> PLATFORM -> BD3 -> MD7 -> BD4 -> MD8 -> MD3 -> MD4
-    
+    // Exacte data punten gebaseerd op de tekening en correctie
     const points = [
       {id: 'MD1', x: -173.9, y: yMD, type: 'MD'},
       {id: 'MD2', x: -104.4, y: yMD, type: 'MD'},
@@ -347,7 +348,7 @@
       {id: 'BD1', x: -57.2,  y: yBerthing, type: 'BD'},
       {id: 'MD6', x: -37.0,  y: yMD, type: 'MD'},
       {id: 'BD2', x: -25.2,  y: yBerthing, type: 'BD'},
-      // Center Platform C5
+      // Center Platform C5 (-20 tot +20)
       {id: 'BD3', x: 24.9,   y: yBerthing, type: 'BD'},
       {id: 'MD7', x: 37.0,   y: yMD, type: 'MD'},
       {id: 'BD4', x: 53.5,   y: yBerthing, type: 'BD'},
@@ -356,22 +357,22 @@
       {id: 'MD4', x: 173.4,  y: yMD, type: 'MD'}
     ];
 
-    // 1. Teken Walkways (Verbindingslijnen)
+    // 1. Teken Walkways (Zigzag patroon zoals op tekening)
     ctx.beginPath();
-    ctx.strokeStyle = '#999';
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#777';
+    ctx.lineWidth = 2;
     
-    // Linkerkant pad: MD1 -> MD2 -> MD5 -> BD1 -> MD6 -> BD2 -> Platform(Left edge)
-    ctx.moveTo(midX + (-173.9 * scale), yMD); // Start MD1
+    // Links: MD1->MD2->MD5->BD1->MD6->BD2->Platform(-20)
+    ctx.moveTo(midX + (-173.9 * scale), yMD); // MD1
     ctx.lineTo(midX + (-104.4 * scale), yMD); // MD2
     ctx.lineTo(midX + (-77.0 * scale), yMD);  // MD5
-    ctx.lineTo(midX + (-57.2 * scale), yBerthing); // BD1
-    ctx.lineTo(midX + (-37.0 * scale), yMD);  // MD6
-    ctx.lineTo(midX + (-25.2 * scale), yBerthing); // BD2
-    ctx.lineTo(midX + (-20 * scale), yPlatform + 20); // Naar Platform zijkant
+    ctx.lineTo(midX + (-57.2 * scale), yBerthing); // naar BD1
+    ctx.lineTo(midX + (-37.0 * scale), yMD);  // naar MD6
+    ctx.lineTo(midX + (-25.2 * scale), yBerthing); // naar BD2
+    ctx.lineTo(midX + (-20 * scale), yPlatformFront); // naar Platform
 
-    // Rechterkant pad: Platform(Right edge) -> BD3 -> MD7 -> BD4 -> MD8 -> MD3 -> MD4
-    ctx.moveTo(midX + (20 * scale), yPlatform + 20); // Van Platform
+    // Rechts: Platform(+20)->BD3->MD7->BD4->MD8->MD3->MD4
+    ctx.moveTo(midX + (20 * scale), yPlatformFront); // Van Platform
     ctx.lineTo(midX + (24.9 * scale), yBerthing); // BD3
     ctx.lineTo(midX + (37.0 * scale), yMD); // MD7
     ctx.lineTo(midX + (53.5 * scale), yBerthing); // BD4
@@ -381,79 +382,116 @@
     
     ctx.stroke();
 
-    // 2. Teken Platform C5 (40m breed)
-    ctx.fillStyle = '#ddd';
-    ctx.strokeStyle = '#555';
+    // 2. Teken Platform C5 (40m breed: -20 tot +20)
+    ctx.fillStyle = '#ccc';
+    ctx.strokeStyle = '#444';
     ctx.lineWidth = 2;
+    // Teken rechthoek voor platform
     ctx.fillRect(midX - (20 * scale), yPlatform, 40 * scale, 60);
     ctx.strokeRect(midX - (20 * scale), yPlatform, 40 * scale, 60);
     
-    // Loading arms indicatie
-    ctx.fillStyle = '#1976d2';
-    ctx.fillRect(midX - 5, yPlatform + 10, 4, 30);
-    ctx.fillRect(midX + 5, yPlatform + 10, 4, 30);
+    // Loading arms indicatie (midden)
+    ctx.fillStyle = '#b71c1c';
+    ctx.fillRect(midX - 4, yPlatform + 20, 3, 25);
+    ctx.fillRect(midX + 1, yPlatform + 20, 3, 25);
+    ctx.font = 'bold 11px Arial';
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'center';
+    ctx.fillText("C5", midX, yPlatform + 15);
 
-    // 3. Teken Dolphins (MD = Rond, BD = Vierkant)
+    // 3. Teken Dolphins
     points.forEach(p => {
         const px = midX + (p.x * scale);
         const py = p.y;
         
         ctx.beginPath();
         if(p.type === 'MD') {
-            ctx.arc(px, py, 6, 0, 2 * Math.PI);
+            // Mooring Dolphin (Cirkel)
+            ctx.arc(px, py, 5, 0, 2 * Math.PI);
             ctx.fillStyle = '#555';
             ctx.fill();
+            ctx.strokeStyle = '#000';
+            ctx.stroke();
             // Label boven
             ctx.fillStyle = '#000';
             ctx.font = '10px Arial';
-            ctx.fillText(p.id, px - 10, py - 12);
+            ctx.textAlign = 'center';
+            ctx.fillText(p.id, px, py - 10);
+            ctx.fillStyle = '#666';
+            ctx.font = '9px Arial';
+            ctx.fillText(Math.abs(p.x).toFixed(1) + "m", px, py - 22);
         } else {
-            // BD (Fender)
+            // Breasting Dolphin / Fender (Vierkant)
             ctx.rect(px - 6, py - 6, 12, 12);
-            ctx.fillStyle = '#4caf50'; // Groen
+            ctx.fillStyle = '#2e7d32'; // Groen
             ctx.fill();
+            ctx.stroke();
             // Label onder
             ctx.fillStyle = '#000';
             ctx.font = '10px Arial';
-            ctx.fillText(p.id, px - 10, py + 20);
+            ctx.textAlign = 'center';
+            ctx.fillText(p.id, px, py + 18);
+             ctx.fillStyle = '#666';
+            ctx.font = '9px Arial';
+            ctx.fillText(Math.abs(p.x).toFixed(1) + "m", px, py + 28);
         }
     });
 
     // 4. Teken Schip
-    const shipY = yBerthing + 15; // Schip ligt tegen de lijn aan (optisch iets eronder)
+    const shipY = yBerthing + 15; 
     const bowX = midX - (fwd * scale);
     const sternX = midX + (aft * scale);
     
-    // Romp
+    // Schip Vorm
     ctx.beginPath();
-    ctx.moveTo(bowX, shipY);
-    ctx.lineTo(bowX + 25, shipY + 30); // Boeg vorm
-    ctx.lineTo(sternX - 15, shipY + 30); 
-    ctx.lineTo(sternX, shipY + 15); // Hek vorm
-    ctx.lineTo(sternX - 15, shipY); 
-    ctx.lineTo(bowX + 25, shipY);
+    ctx.moveTo(bowX, shipY); // Boeg aan de lijn
+    // Boeg neus
+    ctx.bezierCurveTo(bowX - 10, shipY, bowX + 20, shipY + 40, bowX + 40, shipY + 40);
+    // Onderkant romp
+    ctx.lineTo(sternX - 20, shipY + 40);
+    // Hek
+    ctx.bezierCurveTo(sternX, shipY + 40, sternX + 5, shipY + 20, sternX, shipY);
+    ctx.lineTo(bowX, shipY);
     ctx.closePath();
     
-    ctx.fillStyle = 'rgba(25, 118, 210, 0.2)'; // Transparant blauw
+    ctx.fillStyle = 'rgba(25, 118, 210, 0.3)'; 
     ctx.fill();
-    ctx.strokeStyle = '#1976d2';
+    ctx.strokeStyle = '#1565c0';
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Manifold lijn op schip
+    // Parallel Body Indicatie (indien bekend)
+    const pbLen = parseFloat(document.getElementById('pbTotal').value) || 0;
+    if(pbLen > 0) {
+        ctx.beginPath();
+        // Aanname: PB is gecentreerd rond manifold voor visualisatie (niet exact, maar indicatief)
+        // Of beter: teken gewoon een lijn onder het schip
+        const pbStart = midX - (pbLen/2 * scale);
+        const pbEnd = midX + (pbLen/2 * scale);
+        ctx.moveTo(pbStart, shipY + 45);
+        ctx.lineTo(pbEnd, shipY + 45);
+        ctx.strokeStyle = '#e65100';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.fillStyle = '#e65100';
+        ctx.fillText(`PB: ${pbLen}m`, midX, shipY + 58);
+    }
+
+    // Manifold lijn
     ctx.beginPath();
-    ctx.moveTo(midX, shipY);
-    ctx.lineTo(midX, shipY + 30);
+    ctx.moveTo(midX, shipY - 10);
+    ctx.lineTo(midX, shipY + 50);
     ctx.strokeStyle = 'red';
-    ctx.setLineDash([5, 5]);
+    ctx.setLineDash([5, 3]);
+    ctx.lineWidth = 1;
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // 5. Liniaal (Onder)
+    // 5. Liniaal (Onder) - Schaal 1 streepje = 10m
     const rulerY = height - 40;
     ctx.beginPath();
-    ctx.moveTo(10, rulerY);
-    ctx.lineTo(width - 10, rulerY);
+    ctx.moveTo(20, rulerY);
+    ctx.lineTo(width - 20, rulerY);
     ctx.strokeStyle = '#333';
     ctx.lineWidth = 1;
     ctx.stroke();
@@ -462,19 +500,21 @@
     ctx.beginPath(); ctx.moveTo(midX, rulerY - 5); ctx.lineTo(midX, rulerY + 5); ctx.stroke();
     ctx.fillStyle = '#000'; ctx.font = '10px Arial'; ctx.fillText("0", midX - 3, rulerY + 15);
 
-    // Ticks per 20m
-    for(let m = 20; m <= 200; m += 20) {
+    // Ticks per 10 meter (aangepast op verzoek)
+    ctx.font = '9px Arial';
+    for(let m = 10; m <= 190; m += 10) {
         let px = m * scale;
         
         // Rechts
-        if(midX + px < width) {
+        if(midX + px < width - 10) {
             ctx.beginPath(); ctx.moveTo(midX + px, rulerY - 3); ctx.lineTo(midX + px, rulerY + 3); ctx.stroke();
-            ctx.fillText(m, midX + px - 5, rulerY + 15);
+            // Alleen labels om de 20m om overlappen te voorkomen, streepjes wel elke 10m
+            if(m % 20 === 0) ctx.fillText(m, midX + px - 6, rulerY + 15);
         }
         // Links
-        if(midX - px > 0) {
+        if(midX - px > 10) {
             ctx.beginPath(); ctx.moveTo(midX - px, rulerY - 3); ctx.lineTo(midX - px, rulerY + 3); ctx.stroke();
-            ctx.fillText("-" + m, midX - px - 10, rulerY + 15);
+            if(m % 20 === 0) ctx.fillText("-" + m, midX - px - 10, rulerY + 15);
         }
     }
 
