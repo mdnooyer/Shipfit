@@ -407,4 +407,238 @@
     
     // Laadarmen
     const arms = [
-       { id: '4', x: -25.2 + 29
+       { id: '4', x: -25.2 + 29.35, color: '#d32f2f' }, 
+       { id: '5', x: -25.2 + 31.94, color: '#c62828' }, 
+       { id: '7', x: -25.2 + 37.58, color: '#b71c1c' }, 
+       { id: '8', x: -25.2 + 40.17, color: '#8e0000' }  
+    ];
+    ctx.font = 'bold 10px Arial';
+    ctx.textAlign = 'center';
+    arms.forEach(arm => {
+        let ax = midX + (arm.x * scale);
+        ctx.fillStyle = arm.color;
+        ctx.fillRect(ax - 2, yPlatformFront - 15, 4, 15);
+        ctx.fillStyle = '#000';
+        ctx.fillText(arm.id, ax, yPlatformFront - 20);
+    });
+
+    // Dolphins
+    points.forEach(p => {
+        const px = midX + (p.x * scale);
+        const py = p.y;
+        ctx.beginPath();
+        if(p.type === 'MD') {
+            ctx.arc(px, py, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = '#555'; ctx.fill(); ctx.strokeStyle = '#000'; ctx.stroke();
+            ctx.fillStyle = '#000'; ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.fillText(p.id, px, py - 10);
+            ctx.fillStyle = '#666'; ctx.font = '9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1) + "m", px, py - 22);
+        } else {
+            ctx.rect(px - 6, py - 6, 12, 12);
+            ctx.fillStyle = '#2e7d32'; ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#000'; ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.fillText(p.id, px, py + 18);
+            ctx.fillStyle = '#666'; ctx.font = '9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1) + "m", px, py + 28);
+        }
+    });
+
+    // --- SHIP DRAWING ---
+    const shipY = yBerthing + 15; 
+    let bowX, sternX;
+
+    // Logic for Orientation
+    if (side === 'SB') {
+        // SB: Bow to Left (Negative), Stern to Right (Positive)
+        bowX = midX - (fwd * scale);
+        sternX = midX + (aft * scale);
+    } else {
+        // PS: Bow to Right (Positive), Stern to Left (Negative)
+        bowX = midX + (fwd * scale);
+        sternX = midX - (aft * scale);
+    }
+    
+    ctx.beginPath();
+    
+    if (side === 'SB') {
+        // Drawing Left-to-Right (Bow is Left)
+        ctx.moveTo(bowX, shipY); 
+        ctx.bezierCurveTo(bowX - 10, shipY, bowX + 20, shipY + 40, bowX + 40, shipY + 40); // Pointy Bow Left
+        ctx.lineTo(sternX - 20, shipY + 40);
+        ctx.bezierCurveTo(sternX, shipY + 40, sternX + 5, shipY + 20, sternX, shipY); // Flat Stern Right
+        ctx.lineTo(bowX, shipY);
+    } else {
+        // Drawing Right-to-Left (Bow is Right)
+        ctx.moveTo(bowX, shipY);
+        ctx.bezierCurveTo(bowX + 10, shipY, bowX - 20, shipY + 40, bowX - 40, shipY + 40); // Pointy Bow Right
+        ctx.lineTo(sternX + 20, shipY + 40);
+        ctx.bezierCurveTo(sternX, shipY + 40, sternX - 5, shipY + 20, sternX, shipY); // Flat Stern Left
+        ctx.lineTo(bowX, shipY);
+    }
+
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(25, 118, 210, 0.3)'; ctx.fill();
+    ctx.strokeStyle = '#1565c0'; ctx.lineWidth = 2; ctx.stroke();
+
+    // PB Line
+    const pbLen = parseFloat(document.getElementById('pbTotal').value) || 0;
+    if(pbLen > 0) {
+        ctx.beginPath();
+        const pbStart = midX - (pbLen/2 * scale);
+        const pbEnd = midX + (pbLen/2 * scale);
+        ctx.moveTo(pbStart, shipY + 45); ctx.lineTo(pbEnd, shipY + 45);
+        ctx.strokeStyle = '#e65100'; ctx.lineWidth = 4; ctx.stroke();
+        ctx.fillStyle = '#e65100'; ctx.fillText(`PB: ${pbLen}m`, midX, shipY + 58);
+    }
+
+    // Manifold
+    ctx.beginPath();
+    ctx.moveTo(midX, shipY - 10); ctx.lineTo(midX, shipY + 50);
+    ctx.strokeStyle = 'red'; ctx.setLineDash([5, 3]); ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
+
+    // Ruler
+    const rulerY = height - 40;
+    ctx.beginPath(); ctx.moveTo(20, rulerY); ctx.lineTo(width - 20, rulerY);
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(midX, rulerY - 5); ctx.lineTo(midX, rulerY + 5); ctx.stroke();
+    ctx.fillStyle = '#000'; ctx.font = '10px Arial'; ctx.fillText("0", midX - 3, rulerY + 15);
+    ctx.font = '9px Arial';
+    for(let m = 10; m <= 190; m += 10) {
+        let px = m * scale;
+        if(midX + px < width - 10) {
+            ctx.beginPath(); ctx.moveTo(midX + px, rulerY - 3); ctx.lineTo(midX + px, rulerY + 3); ctx.stroke();
+            if(m % 20 === 0) ctx.fillText(m, midX + px - 6, rulerY + 15);
+        }
+        if(midX - px > 10) {
+            ctx.beginPath(); ctx.moveTo(midX - px, rulerY - 3); ctx.lineTo(midX - px, rulerY + 3); ctx.stroke();
+            if(m % 20 === 0) ctx.fillText("-" + m, midX - px - 10, rulerY + 15);
+        }
+    }
+  }
+
+  function drawDualPlots(fwd, aft) {
+    const canvasSB = document.getElementById('canvasSB');
+    const ctxSB = canvasSB.getContext('2d');
+    drawJettyScene(ctxSB, fwd, aft, 'SB'); // Plot 1
+
+    const canvasPS = document.getElementById('canvasPS');
+    const ctxPS = canvasPS.getContext('2d');
+    drawJettyScene(ctxPS, fwd, aft, 'PS'); // Plot 2
+    
+    document.getElementById('plot-container').style.display = 'block';
+  }
+
+  function checkAfmeren() {
+    const fwd = parseFloat(document.getElementById('fwd').value) || 0;
+    const aft = parseFloat(document.getElementById('aft').value) || 0;
+    const pb = parseFloat(document.getElementById('pbTotal').value) || 0;
+    const loa = parseFloat(document.getElementById('loa').value) || 0;
+    const freeboard = parseFloat(document.getElementById('freeboard').value) || 0;
+    const manifold = parseFloat(document.getElementById('manifold').value) || 0;
+    const deadweight = parseFloat(document.getElementById('deadweight').value) || 0;
+
+    let html = '';
+    html += '<div class="section-title">Controles & Limieten</div><div class="result-grid">';
+    html += (pb >= 50) ? `<div class="result-item result-ok">✓ PB (${pb}m)</div>` : `<div class="result-item result-error">✕ PB < 50m</div>`;
+    html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA Fout</div>`;
+    const sumDiff = Math.abs((fwd + aft) - pb);
+    html += (sumDiff <= 1) ? `<div class="result-item result-ok">✓ Geometrie</div>` : `<div class="result-item result-error">✕ Geometrie</div>`;
+    html += (freeboard <= 14.4) ? `<div class="result-item result-ok">✓ FB (${freeboard}m)</div>` : `<div class="result-item result-error">✕ FB te hoog</div>`;
+    html += (manifold <= 16.4) ? `<div class="result-item result-ok">✓ Manifold</div>` : `<div class="result-item result-error">✕ Manifold</div>`;
+    html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
+    html += '</div>';
+
+    // TERUGGEZET NAAR v5.3 LOGICA (Op verzoek)
+    const armConfig = [
+      { name: 'Arm 4', reqFwd: 28.35, reqAft: 19.68 },
+      { name: 'Arm 5', reqFwd: 30.94, reqAft: 17.09 },
+      { name: 'Arm 7', reqFwd: 36.58, reqAft: 11.45 },
+      { name: 'Arm 8', reqFwd: 39.17, reqAft: 8.86 }
+    ];
+
+    const renderArms = (mooringSide) => {
+      let output = `<div class="arm-container"><div class="arm-header">Afmeren ${mooringSide}</div><div class="arm-row">`;
+      armConfig.forEach(arm => {
+        let reqFwd, reqAft;
+        if (mooringSide === 'Stuurboord (SB)') { reqFwd = arm.reqFwd; reqAft = arm.reqAft; } 
+        else { reqFwd = arm.reqAft; reqAft = arm.reqFwd; }
+
+        if (fwd > reqFwd && aft > reqAft) {
+          const moveFwd = (aft - reqAft).toFixed(1);
+          const moveAft = (fwd - reqFwd).toFixed(1);
+          output += `<div class="arm-block result-ok"><div class="arm-title">${arm.name}</div><div class="offset-info"><div class="offset-line"><span>Fwd:</span><span class="offset-val">+${moveFwd}</span></div><div class="offset-line"><span>Aft:</span><span class="offset-val">+${moveAft}</span></div></div></div>`;
+        } else {
+           output += `<div class="arm-block result-error"><div class="arm-title">${arm.name}</div><div>Past niet</div></div>`;
+        }
+      });
+      output += '</div></div>';
+      return output;
+    };
+
+    html += '<div class="section-title">Laadarmen (Check)</div>';
+    html += renderArms('Bakboord (PS)');
+    html += renderArms('Stuurboord (SB)');
+
+    html += '<div class="section-title">Vereiste Sleepboten</div>';
+    let requiredTugs = [];
+    let tugNote = "";
+    if (loa > 0) {
+      if (loa < 125) { requiredTugs = [35, 35]; } 
+      else if (loa >= 125 && loa < 150) { requiredTugs = [50, 40]; tugNote = "<strong>Uitzondering:</strong> Men mag van 40>39 ton maar totaal moet minimaal 90 ton zijn."; } 
+      else if (loa >= 150 && loa < 220) { requiredTugs = [60, 50, 50]; } 
+      else { requiredTugs = [60, 60, 60, 60]; }
+    }
+
+    if (requiredTugs.length > 0) {
+      html += '<div class="tug-section"><div class="tug-row">';
+      requiredTugs.forEach(tonnage => { html += `<div class="tug-item">${getTugSVG(tonnage)}<div class="tug-caption">BP</div></div>`; });
+      html += '</div>';
+      if (tugNote) { html += `<div class="tug-note">${tugNote}</div>`; }
+      html += '</div>';
+    } else {
+       html += '<div style="text-align:center; color:#777; font-size:0.8rem;">Vul LOA in.</div>';
+    }
+
+    // Meerpatroon
+    html += '<div class="section-title">Meerpatroon (Mooring Pattern)</div>';
+    if(deadweight > 0) {
+      let l, b, s;
+      if(deadweight < 20000) { l = 2; b = 2; s = 2; } 
+      else if(deadweight <= 40000) { l = 2; b = 3; s = 2; } 
+      else { l = 3; b = 3; s = 2; }
+
+      html += `
+        <div class="arm-row">
+          <div class="arm-block mooring-box">
+            <div class="mooring-header">Voorschip (Fore)</div>
+            <div class="mooring-details">
+              <div class="mooring-line"><span>Headlines:</span> <strong>${l}</strong></div>
+              <div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div>
+              <div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div>
+            </div>
+          </div>
+          <div class="arm-block mooring-box">
+            <div class="mooring-header">Achterschip (Aft)</div>
+            <div class="mooring-details">
+              <div class="mooring-line"><span>Sternlines:</span> <strong>${l}</strong></div>
+              <div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div>
+              <div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center; font-size:0.8rem; margin-top:5px; color:#666;">
+          Configuratie: ${l} + ${b} + ${s} (Fore & Aft)
+        </div>
+      `;
+    } else {
+      html += '<div style="text-align:center; color:#777;">Vul Summer Deadweight in.</div>';
+    }
+
+    const resDiv = document.getElementById('resultaten');
+    resDiv.innerHTML = html;
+    resDiv.classList.add('visible');
+    
+    if (fwd > 0 && aft > 0) {
+        drawDualPlots(fwd, aft);
+    }
+  }
+</script>
+</body>
+</html>
