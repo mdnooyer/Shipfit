@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 5.4 - Loading Arms Added</title>
+  <title>ShipFit 5.5 - Logic Restored</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -95,7 +95,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 5.4</h1>
+    <h1>ShipFit 5.5</h1>
   </header>
 
   <div class="container">
@@ -316,7 +316,7 @@
     </svg>`;
   }
 
-  // --- PLOT UPDATE: Versie 5.4 - 4 Laadarmen toegevoegd ---
+  // --- PLOT UPDATE: Versie 5.4 - 4 Laadarmen toegevoegd (Visueel behouden) ---
   function drawPlot(fwd, aft) {
     const canvas = document.getElementById('jettyCanvas');
     const ctx = canvas.getContext('2d');
@@ -331,7 +331,7 @@
     
     // Y-Coordinaten (Bovenaanzicht)
     const yBerthing = 160; 
-    const yPlatformFront = 160; // Gelijk met berthing line
+    const yPlatformFront = 160; 
     const yPlatform = 100;      
 
     const yMD_Inner = 110;  
@@ -386,13 +386,12 @@
     ctx.fillRect(midX - (20 * scale), yPlatform, 40 * scale, 60);
     ctx.strokeRect(midX - (20 * scale), yPlatform, 40 * scale, 60);
     
-    // NIEUW: 4 Specifieke Laadarmen
-    // Posities berekend vanaf BD2 (-25.2m)
+    // Laadarmen Visueel (v5.4 waardes)
     const arms = [
-       { id: '4', x: -25.2 + 29.35, color: '#d32f2f' }, // ~4.15m
-       { id: '5', x: -25.2 + 31.94, color: '#c62828' }, // ~6.74m
-       { id: '7', x: -25.2 + 37.58, color: '#b71c1c' }, // ~12.38m
-       { id: '8', x: -25.2 + 40.17, color: '#8e0000' }  // ~14.97m
+       { id: '4', x: -25.2 + 29.35, color: '#d32f2f' }, 
+       { id: '5', x: -25.2 + 31.94, color: '#c62828' }, 
+       { id: '7', x: -25.2 + 37.58, color: '#b71c1c' }, 
+       { id: '8', x: -25.2 + 40.17, color: '#8e0000' }  
     ];
 
     ctx.font = 'bold 10px Arial';
@@ -400,10 +399,8 @@
     
     arms.forEach(arm => {
         let ax = midX + (arm.x * scale);
-        // Arm base
         ctx.fillStyle = arm.color;
         ctx.fillRect(ax - 2, yPlatformFront - 15, 4, 15);
-        // Arm number
         ctx.fillStyle = '#000';
         ctx.fillText(arm.id, ax, yPlatformFront - 20);
     });
@@ -536,45 +533,36 @@
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
     html += '</div>';
 
-    // UPDATED: Arm posities gebaseerd op de opgegeven afstanden t.o.v. CenterLine (0)
-    // Arm 4 = 4.15, Arm 5 = 6.74, Arm 7 = 12.38, Arm 8 = 14.97
+    // TERUGGEZET NAAR v5.3 LOGICA (Op verzoek)
     const armConfig = [
-      { name: 'Arm 4', pos: 4.15 },
-      { name: 'Arm 5', pos: 6.74 },
-      { name: 'Arm 7', pos: 12.38 },
-      { name: 'Arm 8', pos: 14.97 }
+      { name: 'Arm 4', reqFwd: 28.35, reqAft: 19.68 },
+      { name: 'Arm 5', reqFwd: 30.94, reqAft: 17.09 },
+      { name: 'Arm 7', reqFwd: 36.58, reqAft: 11.45 },
+      { name: 'Arm 8', reqFwd: 39.17, reqAft: 8.86 }
     ];
 
     const renderArms = (mooringSide) => {
       let output = `<div class="arm-container"><div class="arm-header">Afmeren ${mooringSide}</div><div class="arm-row">`;
       armConfig.forEach(arm => {
-        // Bereken required moves
-        // Als we connecten op 'arm.pos', moet manifold (0 op schip) naar arm.pos verplaatsen.
-        // Move = arm.pos - 0 = arm.pos.
-        // Fwd en Aft zijn de afmetingen van het schip.
-        // Nieuwe Fwd positie (t.o.v. wal 0) = arm.pos - Fwd
-        // Nieuwe Aft positie (t.o.v. wal 0) = arm.pos + Aft
-        // Dit is complexer, laten we simpele verschuiving tonen:
-        
-        let moveDist = arm.pos; // Schip moet 'moveDist' meter naar rechts schuiven
-        
-        // Simpele output: hoeveel moet het schip verschuiven om de manifold voor deze arm te krijgen?
-        // Als mooringSide == SB, ligt schip met rechts tegen kant (standaard tekening).
-        // Als PS, ligt hij andersom (dan draaien Fwd/Aft om).
-        
-        let moveDir = (moveDist > 0) ? "Naar Rechts" : "Naar Links";
-        
-        // Check of schip nog binnen dolphins valt (grove check)
-        // Laten we gewoon de verschuiving tonen, dat is het belangrijkst
-        
-        output += `<div class="arm-block result-ok"><div class="arm-title">${arm.name}</div><div class="offset-info" style="font-size:0.8rem;">Positie: +${arm.pos.toFixed(1)}m<br>Shift: ${moveDist.toFixed(1)}m</div></div>`;
+        let reqFwd, reqAft;
+        if (mooringSide === 'Stuurboord (SB)') { reqFwd = arm.reqFwd; reqAft = arm.reqAft; } 
+        else { reqFwd = arm.reqAft; reqAft = arm.reqFwd; }
+
+        if (fwd > reqFwd && aft > reqAft) {
+          const moveFwd = (aft - reqAft).toFixed(1);
+          const moveAft = (fwd - reqFwd).toFixed(1);
+          output += `<div class="arm-block result-ok"><div class="arm-title">${arm.name}</div><div class="offset-info"><div class="offset-line"><span>Fwd:</span><span class="offset-val">+${moveFwd}</span></div><div class="offset-line"><span>Aft:</span><span class="offset-val">+${moveAft}</span></div></div></div>`;
+        } else {
+           output += `<div class="arm-block result-error"><div class="arm-title">${arm.name}</div><div>Past niet</div></div>`;
+        }
       });
       output += '</div></div>';
       return output;
     };
 
-    html += '<div class="section-title">Laadarmen (Posities)</div>';
-    html += renderArms('Stuurboord (SB)'); // Voor nu simpele weergave
+    html += '<div class="section-title">Laadarmen (Check)</div>';
+    html += renderArms('Bakboord (PS)');
+    html += renderArms('Stuurboord (SB)');
 
     html += '<div class="section-title">Vereiste Sleepboten</div>';
     let requiredTugs = [];
