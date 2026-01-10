@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 5.9 - Beam Added</title>
+  <title>ShipFit 6.0 - Realistic Tanker Shape</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -104,7 +104,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 5.9</h1>
+    <h1>ShipFit 6.0</h1>
   </header>
 
   <div class="container">
@@ -389,7 +389,7 @@
     </svg>`;
   }
 
-  // --- DRAWING ENGINE ---
+  // --- DRAWING ENGINE (Met nieuw schip ontwerp) ---
   function drawJettyScene(ctx, fwd, aft, side, manifoldOffset) {
     const width = ctx.canvas.width;
     const height = ctx.canvas.height;
@@ -406,6 +406,7 @@
     const yMD_Outer = 70;   
     const yMD4_Custom = 90; 
     
+    // --- STEIGER TEKENEN (Walkways, Platform, Dolphins, Armen) ---
     const points = [
       {id: 'MD1', x: -173.9, y: yMD_Outer, type: 'MD'}, 
       {id: 'MD2', x: -104.4, y: yMD_Outer, type: 'MD'}, 
@@ -413,7 +414,6 @@
       {id: 'BD1', x: -57.2,  y: yBerthing, type: 'BD'},
       {id: 'MD6', x: -37.0,  y: yMD_Inner, type: 'MD'},
       {id: 'BD2', x: -25.2,  y: yBerthing, type: 'BD'},
-      
       {id: 'BD3', x: 24.9,   y: yBerthing, type: 'BD'},
       {id: 'MD7', x: 37.0,   y: yMD_Inner, type: 'MD'},
       {id: 'BD4', x: 53.5,   y: yBerthing, type: 'BD'},
@@ -422,10 +422,7 @@
       {id: 'MD4', x: 173.4,  y: yMD4_Custom, type: 'MD'} 
     ];
 
-    // Walkways
-    ctx.beginPath();
-    ctx.strokeStyle = '#777';
-    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.strokeStyle = '#777'; ctx.lineWidth = 2;
     ctx.moveTo(midX + (-173.9 * scale), yMD_Outer); 
     ctx.lineTo(midX + (-104.4 * scale), yMD_Outer); 
     ctx.lineTo(midX + (-77.0 * scale), yMD_Inner); 
@@ -442,97 +439,108 @@
     ctx.lineTo(midX + (173.4 * scale), yMD4_Custom); 
     ctx.stroke();
 
-    // Platform C5
-    ctx.fillStyle = '#ccc';
-    ctx.strokeStyle = '#444';
-    ctx.lineWidth = 2;
+    ctx.fillStyle = '#ccc'; ctx.strokeStyle = '#444'; ctx.lineWidth = 2;
     ctx.fillRect(midX - (20 * scale), yPlatform, 40 * scale, 60);
     ctx.strokeRect(midX - (20 * scale), yPlatform, 40 * scale, 60);
     
-    // Laadarmen
-    const arms = [
-       { id: '4', x: armPositions['4'], color: '#d32f2f' }, 
-       { id: '5', x: armPositions['5'], color: '#c62828' }, 
-       { id: '7', x: armPositions['7'], color: '#b71c1c' }, 
-       { id: '8', x: armPositions['8'], color: '#8e0000' }  
-    ];
-    ctx.font = 'bold 10px Arial';
-    ctx.textAlign = 'center';
+    const arms = [{ id: '4', x: armPositions['4'], color: '#d32f2f' }, { id: '5', x: armPositions['5'], color: '#c62828' }, { id: '7', x: armPositions['7'], color: '#b71c1c' }, { id: '8', x: armPositions['8'], color: '#8e0000' }];
+    ctx.font = 'bold 10px Arial'; ctx.textAlign = 'center';
     arms.forEach(arm => {
         let ax = midX + (arm.x * scale);
-        ctx.fillStyle = arm.color;
-        ctx.fillRect(ax - 2, yPlatformFront - 15, 4, 15);
-        ctx.fillStyle = '#000';
-        ctx.fillText(arm.id, ax, yPlatformFront - 20);
+        ctx.fillStyle = arm.color; ctx.fillRect(ax - 2, yPlatformFront - 15, 4, 15);
+        ctx.fillStyle = '#000'; ctx.fillText(arm.id, ax, yPlatformFront - 20);
     });
 
-    // Dolphins
     points.forEach(p => {
-        const px = midX + (p.x * scale);
-        const py = p.y;
-        ctx.beginPath();
+        const px = midX + (p.x * scale); const py = p.y; ctx.beginPath();
         if(p.type === 'MD') {
-            ctx.arc(px, py, 5, 0, 2 * Math.PI);
-            ctx.fillStyle = '#555'; ctx.fill(); ctx.strokeStyle = '#000'; ctx.stroke();
+            ctx.arc(px, py, 5, 0, 2 * Math.PI); ctx.fillStyle = '#555'; ctx.fill(); ctx.strokeStyle = '#000'; ctx.stroke();
             ctx.fillStyle = '#000'; ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.fillText(p.id, px, py - 10);
             ctx.fillStyle = '#666'; ctx.font = '9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1) + "m", px, py - 22);
         } else {
-            ctx.rect(px - 6, py - 6, 12, 12);
-            ctx.fillStyle = '#2e7d32'; ctx.fill(); ctx.stroke();
+            ctx.rect(px - 6, py - 6, 12, 12); ctx.fillStyle = '#2e7d32'; ctx.fill(); ctx.stroke();
             ctx.fillStyle = '#000'; ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.fillText(p.id, px, py + 18);
             ctx.fillStyle = '#666'; ctx.font = '9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1) + "m", px, py + 28);
         }
     });
 
-    // --- SCHIP TEKENEN MET OFFSET ---
-    const shipZeroX = midX + (manifoldOffset * scale);
+    // --- SCHIP TEKENEN (NIEUW ONTWERP) ---
+    const shipZeroX = midX + (manifoldOffset * scale); // Manifold positie op de kant
+    // Haal de nieuwe dimensies op (met fallback voor weergave als leeg)
+    const beamVal = parseFloat(document.getElementById('beam').value) || 32; 
+    const bowToCmVal = parseFloat(document.getElementById('bowToCm').value) || (fwd + 20);
+    const sternToCmVal = parseFloat(document.getElementById('sternToCm').value) || (aft + 15);
 
-    const shipY = yBerthing + 15; 
-    let bowX, sternX;
+    // Bereken lengtes van de grijze stukken (zorg dat ze niet negatief zijn)
+    const bowSectionLen = Math.max(0, bowToCmVal - fwd);
+    const sternSectionLen = Math.max(0, sternToCmVal - aft);
+
+    // Y-posities voor breedte (schip iets lager dan berthing line zetten voor visueel effect)
+    const shipCenterY = yBerthing + 25; 
+    const halfBeamSc = (beamVal / 2) * scale;
+    const shipTopY = shipCenterY - halfBeamSc;
+    const shipBotY = shipCenterY + halfBeamSc;
+
+    ctx.lineWidth = 2;
+    const blueStyle = 'rgba(25, 118, 210, 0.8)'; // Blauw PB
+    const grayStyle = 'rgba(158, 158, 158, 0.9)'; // Grijs Bow/Stern
+    const borderStyle = '#333';
+
+    let pbStartX, pbEndX, bowTipX, sternTipX;
 
     if (side === 'SB') {
-        // SB: Boeg Links, Hek Rechts. Manifold op shipZeroX.
-        bowX = shipZeroX - (fwd * scale);
-        sternX = shipZeroX + (aft * scale);
-    } else {
-        // PS: Boeg Rechts, Hek Links. Manifold op shipZeroX.
-        bowX = shipZeroX + (fwd * scale);
-        sternX = shipZeroX - (aft * scale);
-    }
-    
-    ctx.beginPath();
-    if (side === 'SB') {
-        ctx.moveTo(bowX, shipY); 
-        ctx.bezierCurveTo(bowX - 10, shipY, bowX + 20, shipY + 40, bowX + 40, shipY + 40); 
-        ctx.lineTo(sternX - 20, shipY + 40);
-        ctx.bezierCurveTo(sternX, shipY + 40, sternX + 5, shipY + 20, sternX, shipY); 
-        ctx.lineTo(bowX, shipY);
-    } else {
-        ctx.moveTo(bowX, shipY);
-        ctx.bezierCurveTo(bowX + 10, shipY, bowX - 20, shipY + 40, bowX - 40, shipY + 40); 
-        ctx.lineTo(sternX + 20, shipY + 40);
-        ctx.bezierCurveTo(sternX, shipY + 40, sternX - 5, shipY + 20, sternX, shipY); 
-        ctx.lineTo(bowX, shipY);
-    }
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(25, 118, 210, 0.3)'; ctx.fill();
-    ctx.strokeStyle = '#1565c0'; ctx.lineWidth = 2; ctx.stroke();
+        // SB: Boeg Links (-), Hek Rechts (+)
+        pbStartX = shipZeroX - (fwd * scale); // Voorkant PB
+        pbEndX = shipZeroX + (aft * scale);   // Achterkant PB
+        bowTipX = pbStartX - (bowSectionLen * scale);
+        sternTipX = pbEndX + (sternSectionLen * scale);
 
-    // PB Line
-    const pbLen = parseFloat(document.getElementById('pbTotal').value) || 0;
-    if(pbLen > 0) {
-        ctx.beginPath();
-        const pbStart = shipZeroX - (pbLen/2 * scale); // Centered on manifold
-        const pbEnd = shipZeroX + (pbLen/2 * scale);
-        ctx.moveTo(pbStart, shipY + 45); ctx.lineTo(pbEnd, shipY + 45);
-        ctx.strokeStyle = '#e65100'; ctx.lineWidth = 4; ctx.stroke();
-        ctx.fillStyle = '#e65100'; ctx.fillText(`PB: ${pbLen}m`, shipZeroX, shipY + 58);
+        // 1. Teken Parallel Body (Blauw Rect)
+        ctx.fillStyle = blueStyle; ctx.strokeStyle = borderStyle;
+        ctx.fillRect(pbStartX, shipTopY, (fwd + aft) * scale, beamVal * scale);
+        ctx.strokeRect(pbStartX, shipTopY, (fwd + aft) * scale, beamVal * scale);
+
+        // 2. Teken Boeg (Grijs puntig - Links)
+        ctx.fillStyle = grayStyle; ctx.beginPath();
+        ctx.moveTo(pbStartX, shipTopY);
+        ctx.lineTo(bowTipX, shipCenterY); // De punt
+        ctx.lineTo(pbStartX, shipBotY);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+
+        // 3. Teken Hek (Grijs rond - Rechts)
+        ctx.beginPath(); ctx.moveTo(pbEndX, shipTopY);
+        ctx.bezierCurveTo(sternTipX + (5*scale), shipTopY, sternTipX + (5*scale), shipBotY, pbEndX, shipBotY);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+
+    } else {
+        // PS: Boeg Rechts (+), Hek Links (-)
+        pbStartX = shipZeroX - (aft * scale); // Achterkant PB (links)
+        pbEndX = shipZeroX + (fwd * scale);   // Voorkant PB (rechts)
+        sternTipX = pbStartX - (sternSectionLen * scale);
+        bowTipX = pbEndX + (bowSectionLen * scale);
+
+        // 1. Teken Parallel Body (Blauw Rect)
+        ctx.fillStyle = blueStyle; ctx.strokeStyle = borderStyle;
+        ctx.fillRect(pbStartX, shipTopY, (fwd + aft) * scale, beamVal * scale);
+        ctx.strokeRect(pbStartX, shipTopY, (fwd + aft) * scale, beamVal * scale);
+
+        // 2. Teken Boeg (Grijs puntig - Rechts)
+        ctx.fillStyle = grayStyle; ctx.beginPath();
+        ctx.moveTo(pbEndX, shipTopY);
+        ctx.lineTo(bowTipX, shipCenterY); // De punt
+        ctx.lineTo(pbEndX, shipBotY);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+
+        // 3. Teken Hek (Grijs rond - Links)
+        ctx.beginPath(); ctx.moveTo(pbStartX, shipTopY);
+        ctx.bezierCurveTo(sternTipX - (5*scale), shipTopY, sternTipX - (5*scale), shipBotY, pbStartX, shipBotY);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
     }
 
-    // Manifold Lijn (nu op shipZeroX, niet midX)
+    // Manifold Lijn (Rood gestippeld op shipZeroX) Over het schip heen
     ctx.beginPath();
-    ctx.moveTo(shipZeroX, shipY - 10); ctx.lineTo(shipZeroX, shipY + 50);
-    ctx.strokeStyle = 'red'; ctx.setLineDash([5, 3]); ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
+    ctx.moveTo(shipZeroX, shipTopY - 5); ctx.lineTo(shipZeroX, shipBotY + 5);
+    ctx.strokeStyle = '#d32f2f'; ctx.setLineDash([6, 4]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
 
     // Ruler
     const rulerY = height - 40;
@@ -569,7 +577,6 @@
   // --- LOGICA FUNCTIES ---
 
   function checkAfmeren() {
-    // Alleen validatie en tekstuele resultaten
     const fwd = parseFloat(document.getElementById('fwd').value) || 0;
     const aft = parseFloat(document.getElementById('aft').value) || 0;
     const pb = parseFloat(document.getElementById('pbTotal').value) || 0;
@@ -578,7 +585,6 @@
     const manifold = parseFloat(document.getElementById('manifold').value) || 0;
     const deadweight = parseFloat(document.getElementById('deadweight').value) || 0;
 
-    // Verberg plot als die open stond
     document.getElementById('plot-container').style.display = 'none';
 
     let html = '';
@@ -684,7 +690,6 @@
   }
 
   function maakMeerplan() {
-    // 1. Check data
     const fwd = parseFloat(document.getElementById('fwd').value) || 0;
     const aft = parseFloat(document.getElementById('aft').value) || 0;
     
@@ -693,21 +698,17 @@
         return;
     }
 
-    // 2. Check geselecteerde arm
     const selected = document.querySelector('input[name="selectedArm"]:checked');
     if (!selected) {
         alert("Selecteer eerst een laadarm (4, 5, 7 of 8) in de selectievakjes.");
         return;
     }
 
-    // 3. Update localStorage voor selected arm
     localStorage.setItem('shipfit_selected_arm', selected.value);
     
-    // 4. Haal positie op en teken
     const armId = selected.value;
-    const offset = armPositions[armId]; // Bijv 4.15
+    const offset = armPositions[armId]; 
     
-    // Zorg dat resultatenblok er is (voert check uit indien nodig)
     if(!document.getElementById('resultaten').classList.contains('visible')) {
         checkAfmeren();
     }
