@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 6.0 - Realistic Tanker Shape</title>
+  <title>ShipFit 6.1 - Realistic Tanker Details</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -104,7 +104,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 6.0</h1>
+    <h1>ShipFit 6.1</h1>
   </header>
 
   <div class="container">
@@ -183,13 +183,7 @@
 <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-  // Exacte laadarm posities t.o.v. Center Line (0)
-  const armPositions = {
-    '4': 4.15,
-    '5': 6.74,
-    '7': 12.38,
-    '8': 14.97
-  };
+  const armPositions = { '4': 4.15, '5': 6.74, '7': 12.38, '8': 14.97 };
 
   function initApp() {
     if (sessionStorage.getItem('shipfit_auth') !== 'true') {
@@ -211,7 +205,6 @@
     if (input.files.length === 0) return;
     clearFieldsSilent();
     document.getElementById('loading').style.display = 'block';
-    
     try {
       const arrayBuffer = await input.files[0].arrayBuffer();
       const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
@@ -224,13 +217,7 @@
       }
       parseQ88Text(fullText);
       alert('Q88 Data succesvol ingeladen.');
-    } catch (error) {
-      console.error(error);
-      alert('Fout bij lezen PDF.');
-    } finally {
-      document.getElementById('loading').style.display = 'none';
-      input.value = ''; 
-    }
+    } catch (error) { console.error(error); alert('Fout bij lezen PDF.'); } finally { document.getElementById('loading').style.display = 'none'; input.value = ''; }
   }
 
   function parseQ88Text(text) {
@@ -243,15 +230,9 @@
     };
 
     const nameMatch = cleanText.match(/1\.2\s+Vessel[’']?s\s+name.*?\)\s*[:\.]?\s*([A-Z0-9\s\-\.]+?)\s*\((\d{7})\)/i);
-    if (nameMatch) {
-      document.getElementById('shipName').value = nameMatch[1].trim();
-      document.getElementById('imo').value = nameMatch[2];
-    } else {
-        const altImo = cleanText.match(/IMO\s*Number\s*[:\.]?\s*(\d{7})/i);
-        if(altImo) document.getElementById('imo').value = altImo[1];
-    }
+    if (nameMatch) { document.getElementById('shipName').value = nameMatch[1].trim(); document.getElementById('imo').value = nameMatch[2]; } 
+    else { const altImo = cleanText.match(/IMO\s*Number\s*[:\.]?\s*(\d{7})/i); if(altImo) document.getElementById('imo').value = altImo[1]; }
 
-    // Sectie 1.33: Bow to CM / Stern to CM
     const section133Match = cleanText.match(/1\.33(.*?)(?:1\.34|Parallel)/i);
     if (section133Match) {
         const numbers = section133Match[1].match(/(\d+(?:[.,]\d+)?)/g);
@@ -260,459 +241,191 @@
             document.getElementById('sternToCm').value = parseFloat(numbers[1].replace(',', '.'));
         }
     }
-
-    // Sectie 1.29: Beam / Extreme breadth
     const beamVal = findVal("1\\.29\\s.*?Extreme\\s+breadth");
-    if(beamVal) document.getElementById('beam').value = beamVal;
-    else {
-         const altBeam = findVal("Beam");
-         if(altBeam) document.getElementById('beam').value = altBeam;
-    }
+    if(beamVal) document.getElementById('beam').value = beamVal; else { const altBeam = findVal("Beam"); if(altBeam) document.getElementById('beam').value = altBeam; }
 
     const section134Match = cleanText.match(/1\.34(.*?)(?:1\.35|Tonnages)/i);
     if (section134Match) {
-        const sectionText = section134Match[1];
-        const numbers = sectionText.match(/(\d+\.\d+)/g);
+        const sectionText = section134Match[1]; const numbers = sectionText.match(/(\d+\.\d+)/g);
         if (numbers && numbers.length >= 9) {
-            document.getElementById('fwd').value = parseFloat(numbers[1]); 
-            document.getElementById('aft').value = parseFloat(numbers[4]); 
-            document.getElementById('pbTotal').value = parseFloat(numbers[7]); 
+            document.getElementById('fwd').value = parseFloat(numbers[1]); document.getElementById('aft').value = parseFloat(numbers[4]); document.getElementById('pbTotal').value = parseFloat(numbers[7]); 
         } else {
             const fwdMatch = cleanText.match(/Forward\s+to\s+mid-?point\s+manifold[^\r\n\d]*\d+(?:[.,]\d+)?[^\r\n\d]+(\d+(?:[.,]\d+)?)/i);
             if (fwdMatch) document.getElementById('fwd').value = parseFloat(fwdMatch[1].replace(',', '.'));
-            
             const aftMatch = cleanText.match(/Aft\s+to\s+mid-?point\s+manifold[^\r\n\d]*\d+(?:[.,]\d+)?[^\r\n\d]+(\d+(?:[.,]\d+)?)/i);
             if (aftMatch) document.getElementById('aft').value = parseFloat(aftMatch[1].replace(',', '.'));
-
             const pbMatch = cleanText.match(/Parallel\s+body\s+length[^\r\n\d]*\d+(?:[.,]\d+)?[^\r\n\d]+(\d+(?:[.,]\d+)?)/i);
             if (pbMatch) document.getElementById('pbTotal').value = parseFloat(pbMatch[1].replace(',', '.'));
         }
     }
-
     const section824Match = cleanText.match(/8\.24(.*?)(?:8\.25|Number\/size)/i);
-    if (section824Match) {
-        const maniNumbers = section824Match[1].match(/(\d+\.\d+)/g);
-        if (maniNumbers && maniNumbers.length > 0) {
-            const floats = maniNumbers.map(n => parseFloat(n));
-            document.getElementById('manifold').value = Math.max(...floats);
-        }
-    }
-
-    const loaVal = findVal("1\\.27\\s.*?Length overall");
-    if(loaVal) document.getElementById('loa').value = loaVal;
-    else {
-         const altLoa = findVal("Length overall");
-         if(altLoa) document.getElementById('loa').value = altLoa;
-    }
-
+    if (section824Match) { const maniNumbers = section824Match[1].match(/(\d+\.\d+)/g); if (maniNumbers && maniNumbers.length > 0) { const floats = maniNumbers.map(n => parseFloat(n)); document.getElementById('manifold').value = Math.max(...floats); } }
+    const loaVal = findVal("1\\.27\\s.*?Length overall"); if(loaVal) document.getElementById('loa').value = loaVal; else { const altLoa = findVal("Length overall"); if(altLoa) document.getElementById('loa').value = altLoa; }
     const summerSection = cleanText.match(/Summer:(.*?)(?:Winter|Tropical)/i);
-    if (summerSection) {
-        const numbers = summerSection[1].match(/(\d{1,3}(?:,\d{3})*(?:\.\d+)?)/g);
-        if (numbers && numbers.length >= 3) {
-            const dwt = parseFloat(numbers[2].replace(/,/g, ''));
-            document.getElementById('deadweight').value = dwt;
-        } else {
-            const dwtVal = findVal("1\\.39\\s.*?Summer");
-            if(dwtVal) document.getElementById('deadweight').value = dwtVal;
-        }
-    }
-
-    const fbVal = findVal("Normal Ballast Condition");
-    if(fbVal) document.getElementById('freeboard').value = fbVal;
-
-    handleDimChange();
-    saveData();
+    if (summerSection) { const numbers = summerSection[1].match(/(\d{1,3}(?:,\d{3})*(?:\.\d+)?)/g); if (numbers && numbers.length >= 3) { document.getElementById('deadweight').value = parseFloat(numbers[2].replace(/,/g, '')); } else { const dwtVal = findVal("1\\.39\\s.*?Summer"); if(dwtVal) document.getElementById('deadweight').value = dwtVal; } }
+    const fbVal = findVal("Normal Ballast Condition"); if(fbVal) document.getElementById('freeboard').value = fbVal;
+    handleDimChange(); saveData();
   }
 
   function handleDimChange() {
-    const fwd = parseFloat(document.getElementById('fwd').value) || 0;
-    const aft = parseFloat(document.getElementById('aft').value) || 0;
-    if (fwd > 0 && aft > 0 && !document.getElementById('pbTotal').value) {
-      document.getElementById('pbTotal').value = (fwd + aft).toFixed(2);
-    }
-    saveData();
+    const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0;
+    if (fwd > 0 && aft > 0 && !document.getElementById('pbTotal').value) { document.getElementById('pbTotal').value = (fwd + aft).toFixed(2); } saveData();
   }
+  function saveData() { const inputs = document.querySelectorAll('input'); const data = {}; inputs.forEach(input => data[input.id] = input.value); localStorage.setItem('shipfit_data', JSON.stringify(data)); }
+  function loadData() { const data = JSON.parse(localStorage.getItem('shipfit_data')); if (data) { for (const [key, value] of Object.entries(data)) { const el = document.getElementById(key); if (el) el.value = value; if(key === 'selectedArm' && value) { const radio = document.querySelector(`input[name="selectedArm"][value="${value}"]`); if(radio) radio.checked = true; } } } }
+  function resetForm() { if(confirm("Weet je zeker dat je alles wilt wissen?")) { clearFieldsSilent(); } }
+  function createPDF() { const res = document.getElementById('resultaten'); const plot = document.getElementById('plot-container'); if (!res.classList.contains('visible') && !plot.style.display === 'block') { alert("Voer eerst een controle of meerplan uit."); return; } const shipName = document.getElementById('shipName').value || 'Report'; const imo = document.getElementById('imo').value || ''; const oldTitle = document.title; document.title = `${shipName}_${imo}`; window.print(); setTimeout(() => { document.title = oldTitle; }, 1000); }
+  function getTugSVG(tonnage) { return `<svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg"><path d="M5,55 Q25,60 50,55 T95,55" stroke="#90caf9" stroke-width="2" fill="none" opacity="0.6"/><path d="M10,40 Q5,55 25,55 L85,55 Q95,45 90,35 L10,35 Z" fill="#37474f"/><path d="M25,35 L25,15 L65,15 L65,35 Z" fill="#546e7a"/><rect x="30" y="18" width="15" height="8" fill="#b3e5fc"/><rect x="50" y="10" width="10" height="25" fill="#263238"/><text x="50" y="50" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="14" fill="#ffffff">${tonnage}t</text></svg>`; }
 
-  function saveData() {
-    const inputs = document.querySelectorAll('input');
-    const data = {};
-    inputs.forEach(input => data[input.id] = input.value);
-    localStorage.setItem('shipfit_data', JSON.stringify(data));
-  }
-
-  function loadData() {
-    const data = JSON.parse(localStorage.getItem('shipfit_data'));
-    if (data) {
-      for (const [key, value] of Object.entries(data)) {
-        const el = document.getElementById(key);
-        if (el) el.value = value;
-        // Restore radio button
-        if(key === 'selectedArm' && value) {
-            const radio = document.querySelector(`input[name="selectedArm"][value="${value}"]`);
-            if(radio) radio.checked = true;
-        }
-      }
-    }
-  }
-
-  function resetForm() {
-    if(confirm("Weet je zeker dat je alles wilt wissen?")) {
-      clearFieldsSilent();
-    }
-  }
-
-  function createPDF() {
-    const res = document.getElementById('resultaten');
-    const plot = document.getElementById('plot-container');
-    
-    if (!res.classList.contains('visible') && !plot.style.display === 'block') {
-        alert("Voer eerst een controle of meerplan uit.");
-        return;
-    }
-    
-    const shipName = document.getElementById('shipName').value || 'Report';
-    const imo = document.getElementById('imo').value || '';
-    const oldTitle = document.title;
-    document.title = `${shipName}_${imo}`;
-    window.print();
-    setTimeout(() => { document.title = oldTitle; }, 1000);
-  }
-
-  function getTugSVG(tonnage) {
-    return `<svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg">
-      <path d="M5,55 Q25,60 50,55 T95,55" stroke="#90caf9" stroke-width="2" fill="none" opacity="0.6"/>
-      <path d="M10,40 Q5,55 25,55 L85,55 Q95,45 90,35 L10,35 Z" fill="#37474f"/>
-      <path d="M25,35 L25,15 L65,15 L65,35 Z" fill="#546e7a"/>
-      <rect x="30" y="18" width="15" height="8" fill="#b3e5fc"/>
-      <rect x="50" y="10" width="10" height="25" fill="#263238"/>
-      <text x="50" y="50" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="14" fill="#ffffff">${tonnage}t</text>
-    </svg>`;
-  }
-
-  // --- DRAWING ENGINE (Met nieuw schip ontwerp) ---
+  // --- DRAWING ENGINE (UPDATED V6.1) ---
   function drawJettyScene(ctx, fwd, aft, side, manifoldOffset) {
-    const width = ctx.canvas.width;
-    const height = ctx.canvas.height;
-    
+    const width = ctx.canvas.width; const height = ctx.canvas.height;
     ctx.clearRect(0, 0, width, height);
+    const midX = width / 2; const scale = 2.4; 
+    const yBerthing = 160; const yPlatformFront = 160; const yPlatform = 100; const yMD_Inner = 110; const yMD_Outer = 70; const yMD4_Custom = 90; 
     
-    const midX = width / 2;
-    const scale = 2.4; 
-    
-    const yBerthing = 160; 
-    const yPlatformFront = 160; 
-    const yPlatform = 100;      
-    const yMD_Inner = 110;  
-    const yMD_Outer = 70;   
-    const yMD4_Custom = 90; 
-    
-    // --- STEIGER TEKENEN (Walkways, Platform, Dolphins, Armen) ---
-    const points = [
-      {id: 'MD1', x: -173.9, y: yMD_Outer, type: 'MD'}, 
-      {id: 'MD2', x: -104.4, y: yMD_Outer, type: 'MD'}, 
-      {id: 'MD5', x: -77.0,  y: yMD_Inner, type: 'MD'}, 
-      {id: 'BD1', x: -57.2,  y: yBerthing, type: 'BD'},
-      {id: 'MD6', x: -37.0,  y: yMD_Inner, type: 'MD'},
-      {id: 'BD2', x: -25.2,  y: yBerthing, type: 'BD'},
-      {id: 'BD3', x: 24.9,   y: yBerthing, type: 'BD'},
-      {id: 'MD7', x: 37.0,   y: yMD_Inner, type: 'MD'},
-      {id: 'BD4', x: 53.5,   y: yBerthing, type: 'BD'},
-      {id: 'MD8', x: 79.0,   y: yMD_Inner, type: 'MD'},
-      {id: 'MD3', x: 105.1,  y: yMD_Outer, type: 'MD'}, 
-      {id: 'MD4', x: 173.4,  y: yMD4_Custom, type: 'MD'} 
-    ];
+    // Steiger & Armen
+    const points = [{id:'MD1',x:-173.9,y:yMD_Outer,type:'MD'},{id:'MD2',x:-104.4,y:yMD_Outer,type:'MD'},{id:'MD5',x:-77.0,y:yMD_Inner,type:'MD'},{id:'BD1',x:-57.2,y:yBerthing,type:'BD'},{id:'MD6',x:-37.0,y:yMD_Inner,type:'MD'},{id:'BD2',x:-25.2,y:yBerthing,type:'BD'},{id:'BD3',x:24.9,y:yBerthing,type:'BD'},{id:'MD7',x:37.0,y:yMD_Inner,type:'MD'},{id:'BD4',x:53.5,y:yBerthing,type:'BD'},{id:'MD8',x:79.0,y:yMD_Inner,type:'MD'},{id:'MD3',x:105.1,y:yMD_Outer,type:'MD'},{id:'MD4',x:173.4,y:yMD4_Custom,type:'MD'}];
+    ctx.beginPath(); ctx.strokeStyle='#777'; ctx.lineWidth=2;
+    ctx.moveTo(midX+(-173.9*scale),yMD_Outer); ctx.lineTo(midX+(-104.4*scale),yMD_Outer); ctx.lineTo(midX+(-77.0*scale),yMD_Inner); ctx.lineTo(midX+(-57.2*scale),yBerthing); ctx.lineTo(midX+(-37.0*scale),yMD_Inner); ctx.lineTo(midX+(-25.2*scale),yBerthing); ctx.lineTo(midX+(-20*scale),yPlatformFront); 
+    ctx.moveTo(midX+(20*scale),yPlatformFront); ctx.lineTo(midX+(24.9*scale),yBerthing); ctx.lineTo(midX+(37.0*scale),yMD_Inner); ctx.lineTo(midX+(53.5*scale),yBerthing); ctx.lineTo(midX+(79.0*scale),yMD_Inner); ctx.lineTo(midX+(105.1*scale),yMD_Outer); ctx.lineTo(midX+(173.4*scale),yMD4_Custom); ctx.stroke();
+    ctx.fillStyle='#ccc'; ctx.strokeStyle='#444'; ctx.fillRect(midX-(20*scale),yPlatform,40*scale,60); ctx.strokeRect(midX-(20*scale),yPlatform,40*scale,60);
+    const arms=[{id:'4',x:armPositions['4'],color:'#d32f2f'},{id:'5',x:armPositions['5'],color:'#c62828'},{id:'7',x:armPositions['7'],color:'#b71c1c'},{id:'8',x:armPositions['8'],color:'#8e0000'}];
+    ctx.font='bold 10px Arial'; ctx.textAlign='center'; arms.forEach(arm=>{ let ax=midX+(arm.x*scale); ctx.fillStyle=arm.color; ctx.fillRect(ax-2,yPlatformFront-15,4,15); ctx.fillStyle='#000'; ctx.fillText(arm.id,ax,yPlatformFront-20); });
+    points.forEach(p=>{ const px=midX+(p.x*scale); const py=p.y; ctx.beginPath(); if(p.type==='MD'){ ctx.arc(px,py,5,0,2*Math.PI); ctx.fillStyle='#555'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke(); ctx.fillStyle='#000'; ctx.font='10px Arial'; ctx.textAlign='center'; ctx.fillText(p.id,px,py-10); ctx.fillStyle='#666'; ctx.font='9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1)+"m",px,py-22); } else { ctx.rect(px-6,py-6,12,12); ctx.fillStyle='#2e7d32'; ctx.fill(); ctx.stroke(); ctx.fillStyle='#000'; ctx.font='10px Arial'; ctx.textAlign='center'; ctx.fillText(p.id,px,py+18); ctx.fillStyle='#666'; ctx.font='9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1)+"m",px,py+28); } });
 
-    ctx.beginPath(); ctx.strokeStyle = '#777'; ctx.lineWidth = 2;
-    ctx.moveTo(midX + (-173.9 * scale), yMD_Outer); 
-    ctx.lineTo(midX + (-104.4 * scale), yMD_Outer); 
-    ctx.lineTo(midX + (-77.0 * scale), yMD_Inner); 
-    ctx.lineTo(midX + (-57.2 * scale), yBerthing); 
-    ctx.lineTo(midX + (-37.0 * scale), yMD_Inner); 
-    ctx.lineTo(midX + (-25.2 * scale), yBerthing); 
-    ctx.lineTo(midX + (-20 * scale), yPlatformFront); 
-    ctx.moveTo(midX + (20 * scale), yPlatformFront); 
-    ctx.lineTo(midX + (24.9 * scale), yBerthing); 
-    ctx.lineTo(midX + (37.0 * scale), yMD_Inner); 
-    ctx.lineTo(midX + (53.5 * scale), yBerthing); 
-    ctx.lineTo(midX + (79.0 * scale), yMD_Inner); 
-    ctx.lineTo(midX + (105.1 * scale), yMD_Outer); 
-    ctx.lineTo(midX + (173.4 * scale), yMD4_Custom); 
-    ctx.stroke();
-
-    ctx.fillStyle = '#ccc'; ctx.strokeStyle = '#444'; ctx.lineWidth = 2;
-    ctx.fillRect(midX - (20 * scale), yPlatform, 40 * scale, 60);
-    ctx.strokeRect(midX - (20 * scale), yPlatform, 40 * scale, 60);
-    
-    const arms = [{ id: '4', x: armPositions['4'], color: '#d32f2f' }, { id: '5', x: armPositions['5'], color: '#c62828' }, { id: '7', x: armPositions['7'], color: '#b71c1c' }, { id: '8', x: armPositions['8'], color: '#8e0000' }];
-    ctx.font = 'bold 10px Arial'; ctx.textAlign = 'center';
-    arms.forEach(arm => {
-        let ax = midX + (arm.x * scale);
-        ctx.fillStyle = arm.color; ctx.fillRect(ax - 2, yPlatformFront - 15, 4, 15);
-        ctx.fillStyle = '#000'; ctx.fillText(arm.id, ax, yPlatformFront - 20);
-    });
-
-    points.forEach(p => {
-        const px = midX + (p.x * scale); const py = p.y; ctx.beginPath();
-        if(p.type === 'MD') {
-            ctx.arc(px, py, 5, 0, 2 * Math.PI); ctx.fillStyle = '#555'; ctx.fill(); ctx.strokeStyle = '#000'; ctx.stroke();
-            ctx.fillStyle = '#000'; ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.fillText(p.id, px, py - 10);
-            ctx.fillStyle = '#666'; ctx.font = '9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1) + "m", px, py - 22);
-        } else {
-            ctx.rect(px - 6, py - 6, 12, 12); ctx.fillStyle = '#2e7d32'; ctx.fill(); ctx.stroke();
-            ctx.fillStyle = '#000'; ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.fillText(p.id, px, py + 18);
-            ctx.fillStyle = '#666'; ctx.font = '9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1) + "m", px, py + 28);
-        }
-    });
-
-    // --- SCHIP TEKENEN (NIEUW ONTWERP) ---
-    const shipZeroX = midX + (manifoldOffset * scale); // Manifold positie op de kant
-    // Haal de nieuwe dimensies op (met fallback voor weergave als leeg)
+    // --- SCHIP TEKENEN (V6.1 UPDATES) ---
+    const shipZeroX = midX + (manifoldOffset * scale);
     const beamVal = parseFloat(document.getElementById('beam').value) || 32; 
     const bowToCmVal = parseFloat(document.getElementById('bowToCm').value) || (fwd + 20);
     const sternToCmVal = parseFloat(document.getElementById('sternToCm').value) || (aft + 15);
-
-    // Bereken lengtes van de grijze stukken (zorg dat ze niet negatief zijn)
     const bowSectionLen = Math.max(0, bowToCmVal - fwd);
     const sternSectionLen = Math.max(0, sternToCmVal - aft);
 
-    // Y-posities voor breedte (schip iets lager dan berthing line zetten voor visueel effect)
-    const shipCenterY = yBerthing + 25; 
+    // NIEUWE Y-POSITIE: Lager zetten zodat de zijkant ONDER de fenderlijn (160) komt
+    const shipCenterY = yBerthing + 45; // Was +25, nu +45 om te zakken
     const halfBeamSc = (beamVal / 2) * scale;
     const shipTopY = shipCenterY - halfBeamSc;
     const shipBotY = shipCenterY + halfBeamSc;
 
     ctx.lineWidth = 2;
-    const blueStyle = 'rgba(25, 118, 210, 0.8)'; // Blauw PB
-    const grayStyle = 'rgba(158, 158, 158, 0.9)'; // Grijs Bow/Stern
-    const borderStyle = '#333';
-
+    const blueStyle = 'rgba(25, 118, 210, 0.8)'; const grayStyle = 'rgba(158, 158, 158, 0.9)'; 
+    const houseStyle = '#eceff1'; const borderStyle = '#333';
     let pbStartX, pbEndX, bowTipX, sternTipX;
 
-    if (side === 'SB') {
-        // SB: Boeg Links (-), Hek Rechts (+)
-        pbStartX = shipZeroX - (fwd * scale); // Voorkant PB
-        pbEndX = shipZeroX + (aft * scale);   // Achterkant PB
-        bowTipX = pbStartX - (bowSectionLen * scale);
-        sternTipX = pbEndX + (sternSectionLen * scale);
+    if (side === 'SB') { // Boeg Links
+        pbStartX = shipZeroX - (fwd * scale); pbEndX = shipZeroX + (aft * scale);
+        bowTipX = pbStartX - (bowSectionLen * scale); sternTipX = pbEndX + (sternSectionLen * scale);
 
-        // 1. Teken Parallel Body (Blauw Rect)
-        ctx.fillStyle = blueStyle; ctx.strokeStyle = borderStyle;
-        ctx.fillRect(pbStartX, shipTopY, (fwd + aft) * scale, beamVal * scale);
-        ctx.strokeRect(pbStartX, shipTopY, (fwd + aft) * scale, beamVal * scale);
+        // 3. Stuurhuis (Op de Stern, achter PB)
+        ctx.fillStyle = houseStyle; ctx.strokeStyle = borderStyle;
+        ctx.fillRect(pbEndX + 2, shipTopY - 15, (sternSectionLen*scale)*0.6, beamVal*scale + 10);
+        ctx.strokeRect(pbEndX + 2, shipTopY - 15, (sternSectionLen*scale)*0.6, beamVal*scale + 10);
 
-        // 2. Teken Boeg (Grijs puntig - Links)
+        // 4. Hek (Grijs rond - Rechts)
+        ctx.fillStyle = grayStyle; ctx.beginPath(); ctx.moveTo(pbEndX, shipTopY);
+        ctx.bezierCurveTo(sternTipX + (5*scale), shipTopY, sternTipX + (5*scale), shipBotY, pbEndX, shipBotY);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        
+        // 1. Parallel Body (Blauw Rect) - Teken OVER stuurhuis basis
+        ctx.fillStyle = blueStyle; ctx.fillRect(pbStartX, shipTopY, (fwd+aft)*scale, beamVal*scale);
+        ctx.strokeRect(pbStartX, shipTopY, (fwd+aft)*scale, beamVal*scale);
+
+        // 2. Boeg (Grijs STOMPER - Links)
         ctx.fillStyle = grayStyle; ctx.beginPath();
         ctx.moveTo(pbStartX, shipTopY);
-        ctx.lineTo(bowTipX, shipCenterY); // De punt
+        ctx.lineTo(bowTipX + (5*scale), shipTopY + (halfBeamSc*0.4)); // Stompere bovenkant
+        ctx.lineTo(bowTipX + (5*scale), shipBotY - (halfBeamSc*0.4)); // Stompere onderkant
         ctx.lineTo(pbStartX, shipBotY);
         ctx.closePath(); ctx.fill(); ctx.stroke();
 
-        // 3. Teken Hek (Grijs rond - Rechts)
-        ctx.beginPath(); ctx.moveTo(pbEndX, shipTopY);
-        ctx.bezierCurveTo(sternTipX + (5*scale), shipTopY, sternTipX + (5*scale), shipBotY, pbEndX, shipBotY);
+    } else { // Boeg Rechts
+        pbStartX = shipZeroX - (aft * scale); pbEndX = shipZeroX + (fwd * scale);
+        sternTipX = pbStartX - (sternSectionLen * scale); bowTipX = pbEndX + (bowSectionLen * scale);
+
+        // 3. Stuurhuis (Op de Stern, links van PB)
+        ctx.fillStyle = houseStyle; ctx.strokeStyle = borderStyle;
+        // X positie is: einde stern sectie + beetje marge
+        const houseW = (sternSectionLen*scale)*0.6;
+        ctx.fillRect(pbStartX - houseW - 2, shipTopY - 15, houseW, beamVal*scale + 10);
+        ctx.strokeRect(pbStartX - houseW - 2, shipTopY - 15, houseW, beamVal*scale + 10);
+
+        // 4. Hek (Grijs rond - Links)
+        ctx.fillStyle = grayStyle; ctx.beginPath(); ctx.moveTo(pbStartX, shipTopY);
+        ctx.bezierCurveTo(sternTipX - (5*scale), shipTopY, sternTipX - (5*scale), shipBotY, pbStartX, shipBotY);
         ctx.closePath(); ctx.fill(); ctx.stroke();
 
-    } else {
-        // PS: Boeg Rechts (+), Hek Links (-)
-        pbStartX = shipZeroX - (aft * scale); // Achterkant PB (links)
-        pbEndX = shipZeroX + (fwd * scale);   // Voorkant PB (rechts)
-        sternTipX = pbStartX - (sternSectionLen * scale);
-        bowTipX = pbEndX + (bowSectionLen * scale);
+        // 1. Parallel Body (Blauw Rect)
+        ctx.fillStyle = blueStyle; ctx.fillRect(pbStartX, shipTopY, (fwd+aft)*scale, beamVal*scale);
+        ctx.strokeRect(pbStartX, shipTopY, (fwd+aft)*scale, beamVal*scale);
 
-        // 1. Teken Parallel Body (Blauw Rect)
-        ctx.fillStyle = blueStyle; ctx.strokeStyle = borderStyle;
-        ctx.fillRect(pbStartX, shipTopY, (fwd + aft) * scale, beamVal * scale);
-        ctx.strokeRect(pbStartX, shipTopY, (fwd + aft) * scale, beamVal * scale);
-
-        // 2. Teken Boeg (Grijs puntig - Rechts)
+        // 2. Boeg (Grijs STOMPER - Rechts)
         ctx.fillStyle = grayStyle; ctx.beginPath();
         ctx.moveTo(pbEndX, shipTopY);
-        ctx.lineTo(bowTipX, shipCenterY); // De punt
+        ctx.lineTo(bowTipX - (5*scale), shipTopY + (halfBeamSc*0.4)); // Stompere bovenkant
+        ctx.lineTo(bowTipX - (5*scale), shipBotY - (halfBeamSc*0.4)); // Stompere onderkant
         ctx.lineTo(pbEndX, shipBotY);
-        ctx.closePath(); ctx.fill(); ctx.stroke();
-
-        // 3. Teken Hek (Grijs rond - Links)
-        ctx.beginPath(); ctx.moveTo(pbStartX, shipTopY);
-        ctx.bezierCurveTo(sternTipX - (5*scale), shipTopY, sternTipX - (5*scale), shipBotY, pbStartX, shipBotY);
         ctx.closePath(); ctx.fill(); ctx.stroke();
     }
 
-    // Manifold Lijn (Rood gestippeld op shipZeroX) Over het schip heen
+    // NIEUWE CM LIJN (Rood gestippeld OP de Parallel Body)
     ctx.beginPath();
-    ctx.moveTo(shipZeroX, shipTopY - 5); ctx.lineTo(shipZeroX, shipBotY + 5);
-    ctx.strokeStyle = '#d32f2f'; ctx.setLineDash([6, 4]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+    ctx.moveTo(shipZeroX, shipTopY); ctx.lineTo(shipZeroX, shipBotY);
+    ctx.strokeStyle = '#d32f2f'; ctx.setLineDash([5, 3]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#d32f2f'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center';
+    ctx.fillText("CM", shipZeroX, shipTopY - 5); // Label CM boven de lijn
+
+    // PB Lijn (Oranje onder het schip)
+    const pbLen = parseFloat(document.getElementById('pbTotal').value) || 0;
+    if(pbLen > 0) {
+        ctx.beginPath();
+        const pbStart = shipZeroX - (pbLen/2 * scale); const pbEnd = shipZeroX + (pbLen/2 * scale);
+        ctx.moveTo(pbStart, shipBotY + 15); ctx.lineTo(pbEnd, shipBotY + 15);
+        ctx.strokeStyle = '#e65100'; ctx.lineWidth = 4; ctx.stroke();
+        ctx.fillStyle = '#e65100'; ctx.fillText(`PB: ${pbLen}m`, shipZeroX, shipBotY + 28);
+    }
 
     // Ruler
     const rulerY = height - 40;
-    ctx.beginPath(); ctx.moveTo(20, rulerY); ctx.lineTo(width - 20, rulerY);
-    ctx.strokeStyle = '#333'; ctx.lineWidth = 1; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(midX, rulerY - 5); ctx.lineTo(midX, rulerY + 5); ctx.stroke();
-    ctx.fillStyle = '#000'; ctx.font = '10px Arial'; ctx.fillText("0", midX - 3, rulerY + 15);
-    ctx.font = '9px Arial';
-    for(let m = 10; m <= 190; m += 10) {
-        let px = m * scale;
-        if(midX + px < width - 10) {
-            ctx.beginPath(); ctx.moveTo(midX + px, rulerY - 3); ctx.lineTo(midX + px, rulerY + 3); ctx.stroke();
-            if(m % 20 === 0) ctx.fillText(m, midX + px - 6, rulerY + 15);
-        }
-        if(midX - px > 10) {
-            ctx.beginPath(); ctx.moveTo(midX - px, rulerY - 3); ctx.lineTo(midX - px, rulerY + 3); ctx.stroke();
-            if(m % 20 === 0) ctx.fillText("-" + m, midX - px - 10, rulerY + 15);
-        }
-    }
+    ctx.beginPath(); ctx.moveTo(20, rulerY); ctx.lineTo(width - 20, rulerY); ctx.strokeStyle = '#333'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(midX, rulerY - 5); ctx.lineTo(midX, rulerY + 5); ctx.stroke(); ctx.fillStyle = '#000'; ctx.font = '10px Arial'; ctx.fillText("0", midX - 3, rulerY + 15);
+    ctx.font = '9px Arial'; for(let m = 10; m <= 190; m += 10) { let px = m * scale; if(midX + px < width - 10) { ctx.beginPath(); ctx.moveTo(midX + px, rulerY - 3); ctx.lineTo(midX + px, rulerY + 3); ctx.stroke(); if(m % 20 === 0) ctx.fillText(m, midX + px - 6, rulerY + 15); } if(midX - px > 10) { ctx.beginPath(); ctx.moveTo(midX - px, rulerY - 3); ctx.lineTo(midX - px, rulerY + 3); ctx.stroke(); if(m % 20 === 0) ctx.fillText("-" + m, midX - px - 10, rulerY + 15); }}
   }
 
   function drawDualPlots(fwd, aft, offset) {
-    const canvasSB = document.getElementById('canvasSB');
-    const ctxSB = canvasSB.getContext('2d');
-    drawJettyScene(ctxSB, fwd, aft, 'SB', offset); 
-
-    const canvasPS = document.getElementById('canvasPS');
-    const ctxPS = canvasPS.getContext('2d');
-    drawJettyScene(ctxPS, fwd, aft, 'PS', offset); 
-    
+    drawJettyScene(document.getElementById('canvasSB').getContext('2d'), fwd, aft, 'SB', offset); 
+    drawJettyScene(document.getElementById('canvasPS').getContext('2d'), fwd, aft, 'PS', offset); 
     document.getElementById('plot-container').style.display = 'block';
   }
 
-  // --- LOGICA FUNCTIES ---
-
   function checkAfmeren() {
-    const fwd = parseFloat(document.getElementById('fwd').value) || 0;
-    const aft = parseFloat(document.getElementById('aft').value) || 0;
-    const pb = parseFloat(document.getElementById('pbTotal').value) || 0;
-    const loa = parseFloat(document.getElementById('loa').value) || 0;
-    const freeboard = parseFloat(document.getElementById('freeboard').value) || 0;
-    const manifold = parseFloat(document.getElementById('manifold').value) || 0;
-    const deadweight = parseFloat(document.getElementById('deadweight').value) || 0;
-
+    const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0; const pb = parseFloat(document.getElementById('pbTotal').value) || 0; const loa = parseFloat(document.getElementById('loa').value) || 0; const freeboard = parseFloat(document.getElementById('freeboard').value) || 0; const manifold = parseFloat(document.getElementById('manifold').value) || 0; const deadweight = parseFloat(document.getElementById('deadweight').value) || 0;
     document.getElementById('plot-container').style.display = 'none';
-
-    let html = '';
-    html += '<div class="section-title">Controles & Limieten</div><div class="result-grid">';
+    let html = '<div class="section-title">Controles & Limieten</div><div class="result-grid">';
     html += (pb >= 50) ? `<div class="result-item result-ok">✓ PB (${pb}m)</div>` : `<div class="result-item result-error">✕ PB < 50m</div>`;
     html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA Fout</div>`;
-    const sumDiff = Math.abs((fwd + aft) - pb);
-    html += (sumDiff <= 1) ? `<div class="result-item result-ok">✓ Geometrie</div>` : `<div class="result-item result-error">✕ Geometrie</div>`;
+    const sumDiff = Math.abs((fwd + aft) - pb); html += (sumDiff <= 1) ? `<div class="result-item result-ok">✓ Geometrie</div>` : `<div class="result-item result-error">✕ Geometrie</div>`;
     html += (freeboard <= 14.4) ? `<div class="result-item result-ok">✓ FB (${freeboard}m)</div>` : `<div class="result-item result-error">✕ FB te hoog</div>`;
     html += (manifold <= 16.4) ? `<div class="result-item result-ok">✓ Manifold</div>` : `<div class="result-item result-error">✕ Manifold</div>`;
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
     html += '</div>';
-
-    // Rekenregels uit v5.3
-    const armConfig = [
-      { name: 'Arm 4', reqFwd: 28.35, reqAft: 19.68 },
-      { name: 'Arm 5', reqFwd: 30.94, reqAft: 17.09 },
-      { name: 'Arm 7', reqFwd: 36.58, reqAft: 11.45 },
-      { name: 'Arm 8', reqFwd: 39.17, reqAft: 8.86 }
-    ];
-
-    const renderArms = (mooringSide) => {
-      let output = `<div class="arm-container"><div class="arm-header">Afmeren ${mooringSide}</div><div class="arm-row">`;
-      armConfig.forEach(arm => {
-        let reqFwd, reqAft;
-        if (mooringSide === 'Stuurboord (SB)') { reqFwd = arm.reqFwd; reqAft = arm.reqAft; } 
-        else { reqFwd = arm.reqAft; reqAft = arm.reqFwd; }
-
-        if (fwd > reqFwd && aft > reqAft) {
-          const moveFwd = (aft - reqAft).toFixed(1);
-          const moveAft = (fwd - reqFwd).toFixed(1);
-          output += `<div class="arm-block result-ok"><div class="arm-title">${arm.name}</div><div class="offset-info"><div class="offset-line"><span>Fwd:</span><span class="offset-val">+${moveFwd}</span></div><div class="offset-line"><span>Aft:</span><span class="offset-val">+${moveAft}</span></div></div></div>`;
-        } else {
-           output += `<div class="arm-block result-error"><div class="arm-title">${arm.name}</div><div>Past niet</div></div>`;
-        }
-      });
-      output += '</div></div>';
-      return output;
-    };
-
-    html += '<div class="section-title">Laadarmen (Check)</div>';
-    html += renderArms('Bakboord (PS)');
-    html += renderArms('Stuurboord (SB)');
-
-    html += '<div class="section-title">Vereiste Sleepboten</div>';
-    let requiredTugs = [];
-    let tugNote = "";
-    if (loa > 0) {
-      if (loa < 125) { requiredTugs = [35, 35]; } 
-      else if (loa >= 125 && loa < 150) { requiredTugs = [50, 40]; tugNote = "<strong>Uitzondering:</strong> Men mag van 40>39 ton maar totaal moet minimaal 90 ton zijn."; } 
-      else if (loa >= 150 && loa < 220) { requiredTugs = [60, 50, 50]; } 
-      else { requiredTugs = [60, 60, 60, 60]; }
-    }
-
-    if (requiredTugs.length > 0) {
-      html += '<div class="tug-section"><div class="tug-row">';
-      requiredTugs.forEach(tonnage => { html += `<div class="tug-item">${getTugSVG(tonnage)}<div class="tug-caption">BP</div></div>`; });
-      html += '</div>';
-      if (tugNote) { html += `<div class="tug-note">${tugNote}</div>`; }
-      html += '</div>';
-    } else {
-       html += '<div style="text-align:center; color:#777; font-size:0.8rem;">Vul LOA in.</div>';
-    }
-
-    // Meerpatroon
-    html += '<div class="section-title">Meerpatroon (Mooring Pattern)</div>';
-    if(deadweight > 0) {
-      let l, b, s;
-      if(deadweight < 20000) { l = 2; b = 2; s = 2; } 
-      else if(deadweight <= 40000) { l = 2; b = 3; s = 2; } 
-      else { l = 3; b = 3; s = 2; }
-
-      html += `
-        <div class="arm-row">
-          <div class="arm-block mooring-box">
-            <div class="mooring-header">Voorschip (Fore)</div>
-            <div class="mooring-details">
-              <div class="mooring-line"><span>Headlines:</span> <strong>${l}</strong></div>
-              <div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div>
-              <div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div>
-            </div>
-          </div>
-          <div class="arm-block mooring-box">
-            <div class="mooring-header">Achterschip (Aft)</div>
-            <div class="mooring-details">
-              <div class="mooring-line"><span>Sternlines:</span> <strong>${l}</strong></div>
-              <div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div>
-              <div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div>
-            </div>
-          </div>
-        </div>
-        <div style="text-align:center; font-size:0.8rem; margin-top:5px; color:#666;">
-          Configuratie: ${l} + ${b} + ${s} (Fore & Aft)
-        </div>
-      `;
-    } else {
-      html += '<div style="text-align:center; color:#777;">Vul Summer Deadweight in.</div>';
-    }
-
-    const resDiv = document.getElementById('resultaten');
-    resDiv.innerHTML = html;
-    resDiv.classList.add('visible');
+    const armConfig = [{ name: 'Arm 4', reqFwd: 28.35, reqAft: 19.68 }, { name: 'Arm 5', reqFwd: 30.94, reqAft: 17.09 }, { name: 'Arm 7', reqFwd: 36.58, reqAft: 11.45 }, { name: 'Arm 8', reqFwd: 39.17, reqAft: 8.86 }];
+    const renderArms = (mooringSide) => { let output = `<div class="arm-container"><div class="arm-header">Afmeren ${mooringSide}</div><div class="arm-row">`; armConfig.forEach(arm => { let reqFwd, reqAft; if (mooringSide === 'Stuurboord (SB)') { reqFwd = arm.reqFwd; reqAft = arm.reqAft; } else { reqFwd = arm.reqAft; reqAft = arm.reqFwd; } if (fwd > reqFwd && aft > reqAft) { const moveFwd = (aft - reqAft).toFixed(1); const moveAft = (fwd - reqFwd).toFixed(1); output += `<div class="arm-block result-ok"><div class="arm-title">${arm.name}</div><div class="offset-info"><div class="offset-line"><span>Fwd:</span><span class="offset-val">+${moveFwd}</span></div><div class="offset-line"><span>Aft:</span><span class="offset-val">+${moveAft}</span></div></div></div>`; } else { output += `<div class="arm-block result-error"><div class="arm-title">${arm.name}</div><div>Past niet</div></div>`; } }); output += '</div></div>'; return output; };
+    html += '<div class="section-title">Laadarmen (Check)</div>'; html += renderArms('Bakboord (PS)'); html += renderArms('Stuurboord (SB)');
+    html += '<div class="section-title">Vereiste Sleepboten</div>'; let requiredTugs = []; let tugNote = ""; if (loa > 0) { if (loa < 125) { requiredTugs = [35, 35]; } else if (loa >= 125 && loa < 150) { requiredTugs = [50, 40]; tugNote = "<strong>Uitzondering:</strong> Men mag van 40>39 ton maar totaal moet minimaal 90 ton zijn."; } else if (loa >= 150 && loa < 220) { requiredTugs = [60, 50, 50]; } else { requiredTugs = [60, 60, 60, 60]; } }
+    if (requiredTugs.length > 0) { html += '<div class="tug-section"><div class="tug-row">'; requiredTugs.forEach(tonnage => { html += `<div class="tug-item">${getTugSVG(tonnage)}<div class="tug-caption">BP</div></div>`; }); html += '</div>'; if (tugNote) { html += `<div class="tug-note">${tugNote}</div>`; } html += '</div>'; } else { html += '<div style="text-align:center; color:#777; font-size:0.8rem;">Vul LOA in.</div>'; }
+    html += '<div class="section-title">Meerpatroon (Mooring Pattern)</div>'; if(deadweight > 0) { let l, b, s; if(deadweight < 20000) { l = 2; b = 2; s = 2; } else if(deadweight <= 40000) { l = 2; b = 3; s = 2; } else { l = 3; b = 3; s = 2; } html += `<div class="arm-row"><div class="arm-block mooring-box"><div class="mooring-header">Voorschip (Fore)</div><div class="mooring-details"><div class="mooring-line"><span>Headlines:</span> <strong>${l}</strong></div><div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div><div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div></div></div><div class="arm-block mooring-box"><div class="mooring-header">Achterschip (Aft)</div><div class="mooring-details"><div class="mooring-line"><span>Sternlines:</span> <strong>${l}</strong></div><div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div><div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div></div></div></div><div style="text-align:center; font-size:0.8rem; margin-top:5px; color:#666;">Configuratie: ${l} + ${b} + ${s} (Fore & Aft)</div>`; } else { html += '<div style="text-align:center; color:#777;">Vul Summer Deadweight in.</div>'; }
+    const resDiv = document.getElementById('resultaten'); resDiv.innerHTML = html; resDiv.classList.add('visible');
   }
 
   function maakMeerplan() {
-    const fwd = parseFloat(document.getElementById('fwd').value) || 0;
-    const aft = parseFloat(document.getElementById('aft').value) || 0;
-    
-    if (fwd === 0 || aft === 0) {
-        alert("Vul eerst de scheepsgegevens in of upload een Q88.");
-        return;
-    }
-
+    const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0;
+    if (fwd === 0 || aft === 0) { alert("Vul eerst de scheepsgegevens in of upload een Q88."); return; }
     const selected = document.querySelector('input[name="selectedArm"]:checked');
-    if (!selected) {
-        alert("Selecteer eerst een laadarm (4, 5, 7 of 8) in de selectievakjes.");
-        return;
-    }
-
+    if (!selected) { alert("Selecteer eerst een laadarm (4, 5, 7 of 8) in de selectievakjes."); return; }
     localStorage.setItem('shipfit_selected_arm', selected.value);
-    
-    const armId = selected.value;
-    const offset = armPositions[armId]; 
-    
-    if(!document.getElementById('resultaten').classList.contains('visible')) {
-        checkAfmeren();
-    }
-
+    const armId = selected.value; const offset = armPositions[armId]; 
+    if(!document.getElementById('resultaten').classList.contains('visible')) { checkAfmeren(); }
     drawDualPlots(fwd, aft, offset);
   }
 </script>
