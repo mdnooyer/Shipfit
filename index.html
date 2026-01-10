@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 5.5 - Logic Restored</title>
+  <title>ShipFit 5.6 - BCM & SCM Added</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -95,7 +95,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 5.5</h1>
+    <h1>ShipFit 5.6</h1>
   </header>
 
   <div class="container">
@@ -129,6 +129,12 @@
         <div class="form-group"><label for="deadweight">Summer deadweight (1.39) [t]</label><input id="deadweight" type="number" step="0.01" placeholder="Max 130000" oninput="saveData()"></div>
         <div class="form-group"></div>
       </div>
+      <div class="row-flex">
+        <div class="form-group"><label for="bowToCm">Bow to CM (1.33) [m]</label><input id="bowToCm" type="number" step="0.01" placeholder="BCM" oninput="saveData()"></div>
+        <div class="form-group"><label for="sternToCm">Stern to CM (1.33) [m]</label><input id="sternToCm" type="number" step="0.01" placeholder="SCM" oninput="saveData()"></div>
+        <div class="form-group"></div>
+      </div>
+
       <div class="buttons">
         <button type="button" class="btn-secondary" onclick="resetForm()">Wis Alles</button>
         <button type="button" class="btn-primary" onclick="checkAfmeren()">Controleer</button>
@@ -206,6 +212,18 @@
     } else {
         const altImo = cleanText.match(/IMO\s*Number\s*[:\.]?\s*(\d{7})/i);
         if(altImo) document.getElementById('imo').value = altImo[1];
+    }
+
+    // Sectie 1.33: Bow to CM / Stern to CM
+    // Pattern: "1.33" gevolgd door tekst en dan twee getallen gescheiden door iets (vaak een slash)
+    const section133Match = cleanText.match(/1\.33(.*?)(?:1\.34|Parallel)/i);
+    if (section133Match) {
+        // Zoek alle float-achtige getallen in deze sectie
+        const numbers = section133Match[1].match(/(\d+(?:[.,]\d+)?)/g);
+        if (numbers && numbers.length >= 2) {
+            document.getElementById('bowToCm').value = parseFloat(numbers[0].replace(',', '.'));
+            document.getElementById('sternToCm').value = parseFloat(numbers[1].replace(',', '.'));
+        }
     }
 
     const section134Match = cleanText.match(/1\.34(.*?)(?:1\.35|Tonnages)/i);
@@ -316,7 +334,7 @@
     </svg>`;
   }
 
-  // --- PLOT UPDATE: Versie 5.4 - 4 Laadarmen toegevoegd (Visueel behouden) ---
+  // --- PLOT UPDATE: Laadarmen Visueel Behoud (v5.4) ---
   function drawPlot(fwd, aft) {
     const canvas = document.getElementById('jettyCanvas');
     const ctx = canvas.getContext('2d');
@@ -521,6 +539,9 @@
     const freeboard = parseFloat(document.getElementById('freeboard').value) || 0;
     const manifold = parseFloat(document.getElementById('manifold').value) || 0;
     const deadweight = parseFloat(document.getElementById('deadweight').value) || 0;
+    // BCM/SCM kunnen hier ook uitgelezen worden:
+    // const bcm = parseFloat(document.getElementById('bowToCm').value) || 0;
+    // const scm = parseFloat(document.getElementById('sternToCm').value) || 0;
 
     let html = '';
     html += '<div class="section-title">Controles & Limieten</div><div class="result-grid">';
