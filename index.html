@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 6.6 - C5 Resized</title>
+  <title>ShipFit 6.7 - C5 Label Above</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -104,7 +104,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 6.6</h1>
+    <h1>ShipFit 6.7</h1>
   </header>
 
   <div class="container">
@@ -277,7 +277,7 @@
   function createPDF() { const res = document.getElementById('resultaten'); const plot = document.getElementById('plot-container'); if (!res.classList.contains('visible') && !plot.style.display === 'block') { alert("Voer eerst een controle of meerplan uit."); return; } const shipName = document.getElementById('shipName').value || 'Report'; const imo = document.getElementById('imo').value || ''; const oldTitle = document.title; document.title = `${shipName}_${imo}`; window.print(); setTimeout(() => { document.title = oldTitle; }, 1000); }
   function getTugSVG(tonnage) { return `<svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg"><path d="M5,55 Q25,60 50,55 T95,55" stroke="#90caf9" stroke-width="2" fill="none" opacity="0.6"/><path d="M10,40 Q5,55 25,55 L85,55 Q95,45 90,35 L10,35 Z" fill="#37474f"/><path d="M25,35 L25,15 L65,15 L65,35 Z" fill="#546e7a"/><rect x="30" y="18" width="15" height="8" fill="#b3e5fc"/><rect x="50" y="10" width="10" height="25" fill="#263238"/><text x="50" y="50" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="14" fill="#ffffff">${tonnage}t</text></svg>`; }
 
-  // --- DRAWING ENGINE (UPDATED V6.6 - C5 SIZE) ---
+  // --- DRAWING ENGINE (UPDATED V6.7 - C5 LABEL ABOVE) ---
   function drawJettyScene(ctx, fwd, aft, side, manifoldOffset, selectedArmId) {
     const width = ctx.canvas.width; const height = ctx.canvas.height;
     ctx.clearRect(0, 0, width, height);
@@ -291,9 +291,12 @@
     ctx.moveTo(midX+(20*scale),yPlatformFront); ctx.lineTo(midX+(24.9*scale),yBerthing); ctx.lineTo(midX+(37.0*scale),yMD_Inner); ctx.lineTo(midX+(53.5*scale),yBerthing); ctx.lineTo(midX+(79.0*scale),yMD_Inner); ctx.lineTo(midX+(105.1*scale),yMD_Outer); ctx.lineTo(midX+(173.4*scale),yMD4_Custom); ctx.stroke();
     ctx.fillStyle='#ccc'; ctx.strokeStyle='#444'; ctx.fillRect(midX-(20*scale),yPlatform,40*scale,60); ctx.strokeRect(midX-(20*scale),yPlatform,40*scale,60);
     
-    // C5 (Zwart Blokje 12x12 & Label)
-    ctx.fillStyle = '#000'; ctx.fillRect(midX - 6, yBerthing - 6, 12, 12); 
-    ctx.textAlign = 'right'; ctx.font = 'bold 12px Arial'; ctx.fillText("C5", midX - 8, yBerthing + 4); ctx.textAlign = 'center';
+    // C5 (Zwart Blokje 12x12 & Label BOVEN)
+    ctx.fillStyle = '#000'; 
+    ctx.fillRect(midX - 6, yBerthing - 6, 12, 12); 
+    ctx.textAlign = 'center'; 
+    ctx.font = 'bold 12px Arial'; 
+    ctx.fillText("C5", midX, yBerthing - 10); // Boven
 
     // Armen
     const arms=[{id:'4',x:armPositions['4'],color:'#d32f2f'},{id:'5',x:armPositions['5'],color:'#c62828'},{id:'7',x:armPositions['7'],color:'#b71c1c'},{id:'8',x:armPositions['8'],color:'#8e0000'}];
