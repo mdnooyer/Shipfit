@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.1 - Auto Plots & PDF Plan</title>
+  <title>ShipFit 7.2 - Select & Print Plans</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -36,10 +36,12 @@
     button { padding: 12px 28px; border: none; border-radius: 5px; font-size: 1rem; font-weight: 600; cursor: pointer; }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-secondary { background: #e0e0e0; color: #333; }
-    .btn-action { background: var(--accent); color: #fff; }
-    .btn-action:hover { background: #f57c00; }
-    /* Verberg de oude download knop, Maak Meerplan is nu de print functie */
-    .btn-pdf { display: none; } 
+    
+    /* Nieuwe knopstijl voor Meerplan */
+    .btn-meerplan { background: var(--accent); color: #fff; display: none; } /* Standaard verborgen */
+    .btn-meerplan:hover { background: #f57c00; }
+    
+    .btn-pdf { background: #d84315; color: white; }
 
     #resultaten { margin-top: 30px; display: none; }
     #resultaten.visible { display: block; }
@@ -75,69 +77,59 @@
     .plot-label { text-align: center; font-weight: bold; font-size: 1.2rem; margin-bottom: 15px; color: #1565c0; text-transform: uppercase; letter-spacing: 1px; }
     canvas { display: block; margin: 0 auto; border-bottom: 1px solid #eee; }
 
-    /* PRINT STYLE - FOR PDF GENERATION */
+    /* PRINT STYLES - LOGIC FOR TWO DIFFERENT PRINT MODES */
     @media print {
-      @page { 
-        size: A4 landscape; /* Afdrukken op liggend A4 */
-        margin: 0.5cm; 
-      }
-      body { 
-        background: white; 
-        font-family: Arial, sans-serif;
-      }
+      @page { margin: 0.5cm; }
+      body { background: white; font-family: Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       
-      /* Verberg ALLES behalve de plots */
-      .container { 
-        max-width: 100%; 
-        margin: 0; 
-        padding: 0; 
-        box-shadow: none; 
-      }
-      header, .upload-section, form, #resultaten, .buttons { 
-        display: none !important; 
-      }
+      /* Algemeen verbergen van interface elementen */
+      .buttons, .upload-section { display: none !important; }
       hr { display: none; }
 
-      /* Toon de plots */
-      #plot-container { 
-        display: block !important; 
-        border: none; 
-        padding: 0; 
-        margin: 0; 
+      /* MODE: REPORT (Standaard PDF knop) */
+      body[data-print-mode="report"] #plot-container { display: none !important; }
+      body[data-print-mode="report"] .container { box-shadow: none; margin: 0; padding: 0; width: 100%; max-width: 100%; }
+      body[data-print-mode="report"] .form-group input { border: none; padding: 0; font-weight: bold; }
+
+      /* MODE: MEERPLAN (Nieuwe knop) */
+      body[data-print-mode="plots"] @page { size: A4 landscape; }
+      body[data-print-mode="plots"] header, 
+      body[data-print-mode="plots"] form, 
+      body[data-print-mode="plots"] #resultaten,
+      body[data-print-mode="plots"] .container { 
+         background: white; margin: 0; padding: 0; box-shadow: none; max-width: 100%;
+      }
+      /* Verberg alles behalve de plots in deze modus */
+      body[data-print-mode="plots"] > header,
+      body[data-print-mode="plots"] .container > *:not(#plot-container) {
+         display: none !important;
       }
 
-      /* Pagina 1: Stuurboord */
-      #sb-page {
-        page-break-after: always;
-        width: 100%;
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+      body[data-print-mode="plots"] #plot-container {
+         display: block !important; border: none; padding: 0; margin: 0; width: 100%;
       }
 
-      /* Pagina 2: Bakboord */
-      #ps-page {
-        page-break-before: always;
-        width: 100%;
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+      body[data-print-mode="plots"] .plot-wrapper {
+         width: 100vw;
+         height: 95vh; /* Vult de pagina */
+         display: flex;
+         flex-direction: column;
+         align-items: center;
+         justify-content: center;
+         page-break-after: always; /* Forceer nieuwe pagina */
+      }
+      body[data-print-mode="plots"] .plot-wrapper:last-child {
+         page-break-after: auto;
       }
 
-      canvas {
-        width: 95% !important; /* Max breedte op pagina */
-        height: auto !important;
-        border: none;
+      body[data-print-mode="plots"] canvas {
+         width: 95% !important; /* Maximaal breed op landscape */
+         height: auto !important;
+         border: none;
       }
       
-      .plot-label {
-        font-size: 1.5rem;
-        margin-bottom: 20px;
-        color: #000;
+      body[data-print-mode="plots"] .plot-label {
+         font-size: 1.5rem; color: #000; margin-bottom: 10px;
       }
     }
   </style>
@@ -146,7 +138,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 7.1</h1>
+    <h1>ShipFit 7.2</h1>
   </header>
 
   <div class="container">
@@ -187,19 +179,20 @@
       </div>
 
       <div class="arm-selection-group">
-        <label>Selecteer Laadarm voor Meerplan (Verplicht):</label>
+        <label>Selecteer Laadarm voor Meerplan (Verplicht voor plot):</label>
         <div class="radio-options">
-            <label class="radio-label"><input type="radio" name="selectedArm" value="4"> Arm 4</label>
-            <label class="radio-label"><input type="radio" name="selectedArm" value="5"> Arm 5</label>
-            <label class="radio-label"><input type="radio" name="selectedArm" value="7"> Arm 7</label>
-            <label class="radio-label"><input type="radio" name="selectedArm" value="8"> Arm 8</label>
+            <label class="radio-label"><input type="radio" name="selectedArm" value="4" onchange="showMeerplanBtn()"> Arm 4</label>
+            <label class="radio-label"><input type="radio" name="selectedArm" value="5" onchange="showMeerplanBtn()"> Arm 5</label>
+            <label class="radio-label"><input type="radio" name="selectedArm" value="7" onchange="showMeerplanBtn()"> Arm 7</label>
+            <label class="radio-label"><input type="radio" name="selectedArm" value="8" onchange="showMeerplanBtn()"> Arm 8</label>
         </div>
       </div>
 
       <div class="buttons">
         <button type="button" class="btn-secondary" onclick="resetForm()">Wis Alles</button>
         <button type="button" class="btn-primary" onclick="checkAfmeren()">Controleer</button>
-        <button type="button" class="btn-action" onclick="maakMeerplan()">Maak Meerplan (PDF)</button>
+        <button type="button" class="btn-pdf" onclick="printReport()">Download PDF (Rapport)</button>
+        <button type="button" id="btn-meerplan" class="btn-meerplan" onclick="printMeerplan()">Meerplan PDF (Tekening)</button>
       </div>
     </form>
     
@@ -207,12 +200,12 @@
     
     <div id="plot-container" style="display:none;">
       
-      <div id="sb-page" class="plot-wrapper">
+      <div class="plot-wrapper">
         <div class="plot-label">Stuurboord (SB) Aanmeren</div>
         <canvas id="canvasSB" width="950" height="350"></canvas>
       </div>
 
-      <div id="ps-page" class="plot-wrapper">
+      <div class="plot-wrapper">
         <div class="plot-label">Bakboord (PS) Aanmeren</div>
         <canvas id="canvasPS" width="950" height="350"></canvas>
       </div>
@@ -240,6 +233,15 @@
     document.getElementById('resultaten').innerHTML = '';
     document.getElementById('resultaten').classList.remove('visible');
     document.getElementById('plot-container').style.display = 'none';
+    document.getElementById('btn-meerplan').style.display = 'none';
+  }
+
+  function showMeerplanBtn() {
+      // Wordt aangeroepen bij radio change
+      document.getElementById('btn-meerplan').style.display = 'inline-block';
+      // Sla keuze op
+      const selected = document.querySelector('input[name="selectedArm"]:checked');
+      if(selected) localStorage.setItem('shipfit_selected_arm', selected.value);
   }
 
   async function handleFileUpload(input) {
@@ -313,17 +315,36 @@
     if (fwd > 0 && aft > 0 && !document.getElementById('pbTotal').value) { document.getElementById('pbTotal').value = (fwd + aft).toFixed(2); } saveData();
   }
   function saveData() { const inputs = document.querySelectorAll('input'); const data = {}; inputs.forEach(input => data[input.id] = input.value); localStorage.setItem('shipfit_data', JSON.stringify(data)); }
-  function loadData() { const data = JSON.parse(localStorage.getItem('shipfit_data')); if (data) { for (const [key, value] of Object.entries(data)) { const el = document.getElementById(key); if (el) el.value = value; if(key === 'selectedArm' && value) { const radio = document.querySelector(`input[name="selectedArm"][value="${value}"]`); if(radio) radio.checked = true; } } } }
+  function loadData() { 
+      const data = JSON.parse(localStorage.getItem('shipfit_data')); 
+      if (data) { 
+          for (const [key, value] of Object.entries(data)) { 
+              const el = document.getElementById(key); 
+              if (el) el.value = value; 
+              if(key === 'selectedArm' && value) { 
+                  const radio = document.querySelector(`input[name="selectedArm"][value="${value}"]`); 
+                  if(radio) { radio.checked = true; showMeerplanBtn(); }
+              } 
+          } 
+      } 
+  }
   function resetForm() { if(confirm("Weet je zeker dat je alles wilt wissen?")) { clearFieldsSilent(); } }
   function getTugSVG(tonnage) { return `<svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg"><path d="M5,55 Q25,60 50,55 T95,55" stroke="#90caf9" stroke-width="2" fill="none" opacity="0.6"/><path d="M10,40 Q5,55 25,55 L85,55 Q95,45 90,35 L10,35 Z" fill="#37474f"/><path d="M25,35 L25,15 L65,15 L65,35 Z" fill="#546e7a"/><rect x="30" y="18" width="15" height="8" fill="#b3e5fc"/><rect x="50" y="10" width="10" height="25" fill="#263238"/><text x="50" y="50" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="14" fill="#ffffff">${tonnage}t</text></svg>`; }
 
-  // --- DRAWING ENGINE (SAME AS V7.0) ---
+  // --- DRAWING ENGINE (V7.0) ---
   function drawJettyScene(ctx, fwd, aft, side, manifoldOffset, selectedArmId) {
     const width = ctx.canvas.width; const height = ctx.canvas.height;
     ctx.clearRect(0, 0, width, height);
     const midX = width / 2; const scale = 2.4; 
-    const yBerthing = 200; const yPlatformFront = 200; const yPlatformBack = 140; const yMD_Mid = 160; const yMD_Back = 120; const yMD4_Pos = 140; 
     
+    // Verticale posities volgens tekening
+    const yBerthing = 200; // Onderin (Front)
+    const yPlatformFront = 200; 
+    const yPlatformBack = 140; // C5 diepte
+    const yMD_Mid = 160;   // MD5, 6, 7, 8
+    const yMD_Back = 120;  // MD1, 2, 3
+    const yMD4_Pos = 140;  // MD4
+
     const pts = {
         MD1: {x: -173.9, y: yMD_Back, type: 'MD'}, MD2: {x: -104.4, y: yMD_Back, type: 'MD'}, MD5: {x: -77.0,  y: yMD_Mid, type: 'MD'},
         BD1: {x: -57.2,  y: yBerthing, type: 'BD'}, MD6: {x: -37.0,  y: yMD_Mid, type: 'MD'}, BD2: {x: -25.2,  y: yBerthing, type: 'BD'},
@@ -346,7 +367,7 @@
     drawDoubleLine(pts.MD1, pts.MD2); drawDoubleLine(pts.MD2, pts.MD5); drawDoubleLine(pts.MD5, pts.BD1);
     drawDoubleLine(pts.BD1, pts.MD6); drawDoubleLine(pts.MD6, pts.BD2); drawDoubleLine(pts.BD2, pts.C5L);
     drawDoubleLine(pts.C5R, pts.BD3); drawDoubleLine(pts.BD3, pts.MD7); drawDoubleLine(pts.MD7, pts.BD4);
-    drawDoubleLine(pts.BD4, pts.MD8); drawDoubleLine(pts.MD8, pts.MD3); drawDoubleLine(pts.MD3, pts.MD4);
+    drawDoubleLine(pts.BD4, pts.MD8); drawDoubleLine(pts.MD8, pts.MD3); drawDoubleLine(pts.MD3, pts.MD4); 
 
     ctx.fillStyle='#ccc'; ctx.strokeStyle='#444'; ctx.lineWidth=2;
     ctx.fillRect(midX-(20*scale), yPlatformBack, 40*scale, (yPlatformFront-yPlatformBack)); 
@@ -408,7 +429,9 @@
     const pbLen = parseFloat(document.getElementById('pbTotal').value) || 0;
     if(pbLen > 0) {
         ctx.beginPath(); const pbStart = shipZeroX - (pbLen/2 * scale); const pbEnd = shipZeroX + (pbLen/2 * scale);
-        ctx.moveTo(pbStart, shipBotY + 15); ctx.lineTo(pbEnd, shipBotY + 15); ctx.strokeStyle = '#e65100'; ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = '#e65100'; ctx.textAlign = 'center'; ctx.fillText(`PB: ${pbLen}m`, shipZeroX, shipBotY + 28);
+        ctx.moveTo(pbStart, shipBotY + 15); ctx.lineTo(pbEnd, shipBotY + 15);
+        ctx.strokeStyle = '#e65100'; ctx.lineWidth = 4; ctx.stroke();
+        ctx.fillStyle = '#e65100'; ctx.textAlign = 'center'; ctx.fillText(`PB: ${pbLen}m`, shipZeroX, shipBotY + 28);
     }
 
     const rulerY = height - 40;
@@ -424,50 +447,55 @@
   }
 
   function checkAfmeren() {
-    // 1. Validatie
-    const fwd = parseFloat(document.getElementById('fwd').value) || 0;
-    const aft = parseFloat(document.getElementById('aft').value) || 0;
-    const pb = parseFloat(document.getElementById('pbTotal').value) || 0;
-    const loa = parseFloat(document.getElementById('loa').value) || 0;
-    const deadweight = parseFloat(document.getElementById('deadweight').value) || 0;
+    const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0; const pb = parseFloat(document.getElementById('pbTotal').value) || 0; const loa = parseFloat(document.getElementById('loa').value) || 0; const deadweight = parseFloat(document.getElementById('deadweight').value) || 0;
     const selected = document.querySelector('input[name="selectedArm"]:checked');
 
-    if (!selected) { alert("Selecteer een laadarm voordat je controleert."); return; }
+    if (!selected) { alert("Selecteer eerst een laadarm voor controle."); return; }
     if (fwd === 0 || aft === 0) { alert("Vul eerst scheepsgegevens in."); return; }
 
-    // 2. Tekstuele Resultaten
+    const armId = selected.value; const offset = armPositions[armId];
+    
+    // Teken alles op scherm (preview)
+    drawDualPlots(fwd, aft, offset, armId);
+
+    // Bouw resultaten (alleen tekst, geen pdf generatie hier)
     let html = '<div class="section-title">Controles & Limieten</div><div class="result-grid">';
     html += (pb >= 50) ? `<div class="result-item result-ok">✓ PB (${pb}m)</div>` : `<div class="result-item result-error">✕ PB < 50m</div>`;
     html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA Fout</div>`;
+    const sumDiff = Math.abs((fwd + aft) - pb); html += (sumDiff <= 1) ? `<div class="result-item result-ok">✓ Geometrie</div>` : `<div class="result-item result-error">✕ Geometrie</div>`;
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
     html += '</div>';
-
+    
     // Sleepboten (simpel)
     let reqTugs = (loa < 125) ? [35,35] : (loa < 150) ? [50,40] : (loa < 220) ? [60,50,50] : [60,60,60,60];
     html += '<div class="section-title">Vereiste Sleepboten</div><div class="tug-section"><div class="tug-row">';
     reqTugs.forEach(t => { html += `<div class="tug-item">${getTugSVG(t)}<div class="tug-caption">BP</div></div>`; });
     html += '</div></div>';
 
-    // 3. Toon Alles
-    const resDiv = document.getElementById('resultaten'); 
-    resDiv.innerHTML = html; 
-    resDiv.classList.add('visible');
-
-    // 4. Teken Plots
-    localStorage.setItem('shipfit_selected_arm', selected.value);
-    const armId = selected.value; const offset = armPositions[armId];
-    drawDualPlots(fwd, aft, offset, armId);
+    const resDiv = document.getElementById('resultaten'); resDiv.innerHTML = html; resDiv.classList.add('visible');
   }
 
-  function maakMeerplan() {
-    const selected = document.querySelector('input[name="selectedArm"]:checked');
-    if (!selected) { alert("Selecteer eerst een laadarm."); return; }
-    
-    // Zorg dat de plots up-to-date zijn
-    checkAfmeren();
-    
-    // Print PDF
-    window.print();
+  function printReport() {
+      // Print de huidige view (standaard rapport)
+      document.body.setAttribute('data-print-mode', 'report');
+      window.print();
+  }
+
+  function printMeerplan() {
+      // Print alleen de plots (2 pagina's)
+      const selected = document.querySelector('input[name="selectedArm"]:checked');
+      if (!selected) { alert("Selecteer eerst een laadarm."); return; }
+      
+      // Update eerst de tekeningen voor de zekerheid
+      const fwd = parseFloat(document.getElementById('fwd').value) || 0; 
+      const aft = parseFloat(document.getElementById('aft').value) || 0;
+      const armId = selected.value; const offset = armPositions[armId];
+      drawDualPlots(fwd, aft, offset, armId);
+
+      document.body.setAttribute('data-print-mode', 'plots');
+      window.print();
+      // Reset mode na print (optioneel, browser preview sluit dit vaak af)
+      document.body.removeAttribute('data-print-mode');
   }
 </script>
 </body>
