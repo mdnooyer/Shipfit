@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.6 - Corrected Logic</title>
+  <title>ShipFit 7.7 - Complete Checks</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -277,7 +277,7 @@
   function createPDF() { const res = document.getElementById('resultaten'); const plot = document.getElementById('plot-container'); if (!res.classList.contains('visible') && !plot.style.display === 'block') { alert("Voer eerst een controle of meerplan uit."); return; } const shipName = document.getElementById('shipName').value || 'Report'; const imo = document.getElementById('imo').value || ''; const oldTitle = document.title; document.title = `${shipName}_${imo}`; window.print(); setTimeout(() => { document.title = oldTitle; }, 1000); }
   function getTugSVG(tonnage) { return `<svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg"><path d="M5,55 Q25,60 50,55 T95,55" stroke="#90caf9" stroke-width="2" fill="none" opacity="0.6"/><path d="M10,40 Q5,55 25,55 L85,55 Q95,45 90,35 L10,35 Z" fill="#37474f"/><path d="M25,35 L25,15 L65,15 L65,35 Z" fill="#546e7a"/><rect x="30" y="18" width="15" height="8" fill="#b3e5fc"/><rect x="50" y="10" width="10" height="25" fill="#263238"/><text x="50" y="50" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="14" fill="#ffffff">${tonnage}t</text></svg>`; }
 
-  // --- DRAWING ENGINE (UPDATED V7.6) ---
+  // --- DRAWING ENGINE (UPDATED V7.0 - MD4 POSITION CORRECTED) ---
   function drawJettyScene(ctx, fwd, aft, side, manifoldOffset, selectedArmId) {
     const width = ctx.canvas.width; const height = ctx.canvas.height;
     ctx.clearRect(0, 0, width, height);
@@ -471,23 +471,28 @@
   }
 
   function checkAfmeren() {
-    const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0; const pb = parseFloat(document.getElementById('pbTotal').value) || 0; const loa = parseFloat(document.getElementById('loa').value) || 0; const deadweight = parseFloat(document.getElementById('deadweight').value) || 0; const selected = document.querySelector('input[name="selectedArm"]:checked');
+    const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0; const pb = parseFloat(document.getElementById('pbTotal').value) || 0; const loa = parseFloat(document.getElementById('loa').value) || 0; const freeboard = parseFloat(document.getElementById('freeboard').value) || 0; const manifold = parseFloat(document.getElementById('manifold').value) || 0; const deadweight = parseFloat(document.getElementById('deadweight').value) || 0;
+    const selected = document.querySelector('input[name="selectedArm"]:checked');
 
-    // !!! FIX HIER: Geen 'return' meer als er geen arm is geselecteerd !!!
-    // if (!selected) { alert("Selecteer een laadarm voordat je controleert."); return; } <-- VERWIJDERD
+    // HIER DE WIJZIGING: GEEN LAADARM VERPLICHT VOOR ALLEEN CHECK
+    // if (!selected) { alert("Selecteer een laadarm voordat je controleert."); return; } <--- WEG
     
     if (fwd === 0 || aft === 0) { alert("Vul eerst scheepsgegevens in."); return; }
 
     let html = '<div class="section-title">Controles & Limieten</div><div class="result-grid">';
     html += (pb >= 50) ? `<div class="result-item result-ok">✓ PB (${pb}m)</div>` : `<div class="result-item result-error">✕ PB < 50m</div>`;
     html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA Fout</div>`;
+    // De geometrie check vereist forward/aft + pb, dus die kan gewoon
+    const sumDiff = Math.abs((fwd + aft) - pb); html += (sumDiff <= 1) ? `<div class="result-item result-ok">✓ Geometrie</div>` : `<div class="result-item result-error">✕ Geometrie</div>`;
+    html += (freeboard <= 14.4) ? `<div class="result-item result-ok">✓ FB (${freeboard}m)</div>` : `<div class="result-item result-error">✕ FB te hoog</div>`;
+    html += (manifold <= 16.4) ? `<div class="result-item result-ok">✓ Manifold</div>` : `<div class="result-item result-error">✕ Manifold</div>`;
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
     html += '</div>';
 
-    // Rekenresultaten van de armen (past het bereik?)
+    // OOK DE LAADARMEN CHECKEN (TEKSTUEEL) ALS ER NOG GEEN SELECTIE IS
+    // We laten gewoon alle armen zien en of ze passen.
     const armConfig = [{ name: 'Arm 4', reqFwd: 28.35, reqAft: 19.68 }, { name: 'Arm 5', reqFwd: 30.94, reqAft: 17.09 }, { name: 'Arm 7', reqFwd: 36.58, reqAft: 11.45 }, { name: 'Arm 8', reqFwd: 39.17, reqAft: 8.86 }];
     
-    // Functie om de blokjes te genereren (ongeacht selectie)
     const renderArms = (mooringSide) => { 
         let output = `<div class="arm-container"><div class="arm-header">Afmeren ${mooringSide}</div><div class="arm-row">`; 
         armConfig.forEach(arm => { 
@@ -528,13 +533,13 @@
     resDiv.innerHTML = html; 
     resDiv.classList.add('visible');
 
-    // ALLEEN ALS er een arm geselecteerd is, tekenen we de plot
+    // ALLEEN ALS er een arm geselecteerd is, tekenen we de plot nu alvast (maar niet verplicht)
     if(selected) {
         localStorage.setItem('shipfit_selected_arm', selected.value);
         const armId = selected.value; const offset = armPositions[armId];
         drawDualPlots(fwd, aft, offset, armId);
     } else {
-        // Anders verbergen we de plot container, zodat men alleen tekst ziet
+        // Anders verbergen we de plot container
         document.getElementById('plot-container').style.display = 'none';
     }
   }
@@ -544,12 +549,10 @@
     const selected = document.querySelector('input[name="selectedArm"]:checked');
     if (!selected) { alert("Selecteer eerst een laadarm."); return; }
     
+    // Voer de check uit (en teken de plot)
     checkAfmeren();
-    // In v7.0 deed deze knop alleen de plot tonen (via checkAfmeren -> drawDualPlots).
-    // De PDF functionaliteit was later toegevoegd. U vroeg om terug te gaan naar v7.0.
-    // Dus hier GEEN window.print(). De knop "Maak Meerplan" toont de plot.
     
-    // Scroll naar beneden zodat de gebruiker de plot ziet
+    // Scroll naar de plot
     document.getElementById('plot-container').scrollIntoView({behavior: 'smooth'});
   }
 </script>
