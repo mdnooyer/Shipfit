@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 6.4 - Highlight Selected Arm</title>
+  <title>ShipFit 6.5 - C5 & Berthing Line</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -104,7 +104,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 6.4</h1>
+    <h1>ShipFit 6.5</h1>
   </header>
 
   <div class="container">
@@ -277,50 +277,53 @@
   function createPDF() { const res = document.getElementById('resultaten'); const plot = document.getElementById('plot-container'); if (!res.classList.contains('visible') && !plot.style.display === 'block') { alert("Voer eerst een controle of meerplan uit."); return; } const shipName = document.getElementById('shipName').value || 'Report'; const imo = document.getElementById('imo').value || ''; const oldTitle = document.title; document.title = `${shipName}_${imo}`; window.print(); setTimeout(() => { document.title = oldTitle; }, 1000); }
   function getTugSVG(tonnage) { return `<svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg"><path d="M5,55 Q25,60 50,55 T95,55" stroke="#90caf9" stroke-width="2" fill="none" opacity="0.6"/><path d="M10,40 Q5,55 25,55 L85,55 Q95,45 90,35 L10,35 Z" fill="#37474f"/><path d="M25,35 L25,15 L65,15 L65,35 Z" fill="#546e7a"/><rect x="30" y="18" width="15" height="8" fill="#b3e5fc"/><rect x="50" y="10" width="10" height="25" fill="#263238"/><text x="50" y="50" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="14" fill="#ffffff">${tonnage}t</text></svg>`; }
 
-  // --- DRAWING ENGINE (UPDATED V6.4 - GREEN ARM SELECTION) ---
+  // --- DRAWING ENGINE (UPDATED V6.5 - C5 & BERTHING LINE) ---
   function drawJettyScene(ctx, fwd, aft, side, manifoldOffset, selectedArmId) {
     const width = ctx.canvas.width; const height = ctx.canvas.height;
     ctx.clearRect(0, 0, width, height);
     const midX = width / 2; const scale = 2.4; 
     const yBerthing = 160; const yPlatformFront = 160; const yPlatform = 100; const yMD_Inner = 110; const yMD_Outer = 70; const yMD4_Custom = 90; 
     
-    // Steiger & Armen
+    // Steiger
     const points = [{id:'MD1',x:-173.9,y:yMD_Outer,type:'MD'},{id:'MD2',x:-104.4,y:yMD_Outer,type:'MD'},{id:'MD5',x:-77.0,y:yMD_Inner,type:'MD'},{id:'BD1',x:-57.2,y:yBerthing,type:'BD'},{id:'MD6',x:-37.0,y:yMD_Inner,type:'MD'},{id:'BD2',x:-25.2,y:yBerthing,type:'BD'},{id:'BD3',x:24.9,y:yBerthing,type:'BD'},{id:'MD7',x:37.0,y:yMD_Inner,type:'MD'},{id:'BD4',x:53.5,y:yBerthing,type:'BD'},{id:'MD8',x:79.0,y:yMD_Inner,type:'MD'},{id:'MD3',x:105.1,y:yMD_Outer,type:'MD'},{id:'MD4',x:173.4,y:yMD4_Custom,type:'MD'}];
     ctx.beginPath(); ctx.strokeStyle='#777'; ctx.lineWidth=2;
     ctx.moveTo(midX+(-173.9*scale),yMD_Outer); ctx.lineTo(midX+(-104.4*scale),yMD_Outer); ctx.lineTo(midX+(-77.0*scale),yMD_Inner); ctx.lineTo(midX+(-57.2*scale),yBerthing); ctx.lineTo(midX+(-37.0*scale),yMD_Inner); ctx.lineTo(midX+(-25.2*scale),yBerthing); ctx.lineTo(midX+(-20*scale),yPlatformFront); 
     ctx.moveTo(midX+(20*scale),yPlatformFront); ctx.lineTo(midX+(24.9*scale),yBerthing); ctx.lineTo(midX+(37.0*scale),yMD_Inner); ctx.lineTo(midX+(53.5*scale),yBerthing); ctx.lineTo(midX+(79.0*scale),yMD_Inner); ctx.lineTo(midX+(105.1*scale),yMD_Outer); ctx.lineTo(midX+(173.4*scale),yMD4_Custom); ctx.stroke();
     ctx.fillStyle='#ccc'; ctx.strokeStyle='#444'; ctx.fillRect(midX-(20*scale),yPlatform,40*scale,60); ctx.strokeRect(midX-(20*scale),yPlatform,40*scale,60);
     
-    // ARMEN TEKENEN MET KLEUR CHECK
+    // C5 (Zwart Blokje & Label)
+    ctx.fillStyle = '#000'; ctx.fillRect(midX - 2, yBerthing - 5, 4, 10); 
+    ctx.textAlign = 'right'; ctx.font = 'bold 12px Arial'; ctx.fillText("C5", midX - 5, yBerthing); ctx.textAlign = 'center';
+
+    // Armen
     const arms=[{id:'4',x:armPositions['4'],color:'#d32f2f'},{id:'5',x:armPositions['5'],color:'#c62828'},{id:'7',x:armPositions['7'],color:'#b71c1c'},{id:'8',x:armPositions['8'],color:'#8e0000'}];
     ctx.font='bold 10px Arial'; ctx.textAlign='center'; 
-    arms.forEach(arm=>{ 
-        let ax=midX+(arm.x*scale); 
-        // HIER IS DE WIJZIGING: Check of dit de geselecteerde arm is
-        if(arm.id === selectedArmId) {
-            ctx.fillStyle = '#00c853'; // Felgroen
-        } else {
-            ctx.fillStyle = arm.color; // Origineel rood
-        }
-        ctx.fillRect(ax-2,yPlatformFront-15,4,15); 
-        ctx.fillStyle='#000'; ctx.fillText(arm.id,ax,yPlatformFront-20); 
-    });
+    arms.forEach(arm=>{ let ax=midX+(arm.x*scale); if(arm.id === selectedArmId) { ctx.fillStyle = '#00c853'; } else { ctx.fillStyle = arm.color; } ctx.fillRect(ax-2,yPlatformFront-15,4,15); ctx.fillStyle='#000'; ctx.fillText(arm.id,ax,yPlatformFront-20); });
     
     points.forEach(p=>{ 
         const px=midX+(p.x*scale); const py=p.y; ctx.beginPath(); 
         if(p.type==='MD'){ 
             ctx.arc(px,py,5,0,2*Math.PI); ctx.fillStyle='#555'; ctx.fill(); ctx.strokeStyle='#000'; ctx.stroke(); 
-            ctx.fillStyle='#000'; ctx.font='10px Arial'; ctx.textAlign='center'; ctx.fillText(p.id,px,py-10); 
-            ctx.fillStyle='#666'; ctx.font='9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1)+"m",px,py-22); 
-        } else { // BD Type
+            ctx.fillStyle='#000'; ctx.font='10px Arial'; ctx.textAlign='center'; ctx.fillText(p.id,px,py-10); ctx.fillStyle='#666'; ctx.font='9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1)+"m",px,py-22); 
+        } else { // BD
             ctx.rect(px-6,py-6,12,12); ctx.fillStyle='#2e7d32'; ctx.fill(); ctx.stroke(); 
             ctx.fillStyle='#000'; ctx.font='10px Arial'; 
             if(p.id === 'BD1' || p.id === 'BD2') { ctx.textAlign='right'; ctx.fillText(p.id, px-10, py+4); }
             else if(p.id === 'BD3' || p.id === 'BD4') { ctx.textAlign='left'; ctx.fillText(p.id, px+10, py+4); }
-            ctx.textAlign='center'; 
-            ctx.fillStyle='#666'; ctx.font='9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1)+"m",px,py+28); 
+            ctx.textAlign='center'; ctx.fillStyle='#666'; ctx.font='9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1)+"m",px,py+28); 
         } 
     });
+
+    // --- BLUE DASHED LINE (BERTHING LINE) ---
+    // Positie: Tussen BDs (y=166) en Schip (y=170) -> y=168
+    // Loopt van MD1 x (-173.9) tot MD4 x (+173.4)
+    ctx.beginPath();
+    ctx.moveTo(midX + (-173.9 * scale), yBerthing + 8); 
+    ctx.lineTo(midX + (173.4 * scale), yBerthing + 8);
+    ctx.strokeStyle = '#1565c0'; ctx.lineWidth = 1; ctx.setLineDash([10, 5]); ctx.stroke(); ctx.setLineDash([]);
+    // Label
+    ctx.fillStyle = '#1565c0'; ctx.textAlign = 'left'; ctx.font = '10px Arial';
+    ctx.fillText("Berthing line", midX + (-173.9 * scale), yBerthing + 5);
 
     // --- SCHIP TEKENEN ---
     const shipZeroX = midX + (manifoldOffset * scale);
