@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.9 - Portrait Report & Plots</title>
+  <title>ShipFit 7.10 - Fixed PDF Button</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -39,10 +39,6 @@
     .btn-action { background: var(--accent); color: #fff; }
     .btn-action:hover { background: #f57c00; }
     .btn-pdf { background: #d84315; color: white; }
-    
-    /* Nieuwe knopstijl voor Meerplan PDF */
-    .btn-meerplan-pdf { background: #2e7d32; color: white; display: none; } /* Standaard verborgen */
-    .btn-meerplan-pdf:hover { background: #1b5e20; }
 
     #resultaten { margin-top: 30px; display: none; }
     #resultaten.visible { display: block; }
@@ -78,50 +74,52 @@
     .plot-label { text-align: center; font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; color: #1565c0; text-transform: uppercase; letter-spacing: 1px; }
     canvas { display: block; margin: 0 auto; border-bottom: 1px solid #eee; }
 
-    /* PRINT STYLES - SMART PDF REPORT (3 Pages, Portrait) */
+    /* PRINT STYLES */
     @media print {
-      @page { margin: 1cm; size: A4 portrait; } /* Forceer Portrait voor Pagina 1 */
-      
+      @page { margin: 0.5cm; size: A4 portrait; }
       body { background: white; font-family: Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       
       .buttons, .upload-section { display: none !important; }
       hr { display: none; }
 
-      /* Modus: REPORT (3 Pagina's) */
-      body[data-print-mode="report"] .container {
-          width: 100%; max-width: 100%; margin: 0; padding: 0; box-shadow: none;
-      }
-      
-      body[data-print-mode="report"] .form-group input { 
-          border: none; padding: 0; font-weight: bold; background: transparent; 
-      }
+      /* Algemene Container reset voor print */
+      .container { width: 100%; max-width: 100%; margin: 0; padding: 0; box-shadow: none; }
+      .form-group input { border: none !important; padding: 0; font-weight: bold; background: transparent; }
 
+      /* MODUS: ALLEEN RAPPORT (Als geen arm geselecteerd is) */
+      body[data-print-mode="simple"] #plot-container { display: none !important; }
+
+      /* MODUS: VOLLEDIG (3 Pagina's) */
       /* Pagina 1: Resultaten */
-      body[data-print-mode="report"] #resultaten {
+      body[data-print-mode="full"] #resultaten { 
           display: block !important;
-          page-break-after: always;
+          page-break-after: always; /* Einde pagina 1 */
       }
 
       /* Pagina 2 & 3: Plots */
-      body[data-print-mode="report"] #plot-container {
+      body[data-print-mode="full"] #plot-container {
          display: block !important; border: none; padding: 0; margin: 0; width: 100%;
       }
       
-      body[data-print-mode="report"] .plot-wrapper {
-         page-break-after: always; /* Elke plot op nieuwe pagina */
-         padding-top: 50px;
+      body[data-print-mode="full"] .plot-wrapper {
+         page-break-after: always; /* Einde pagina 2 */
+         width: 100%;
+         height: auto;
+         display: block;
+         padding-top: 20px;
       }
       
-      body[data-print-mode="report"] .plot-wrapper:last-child {
-         page-break-after: auto;
+      body[data-print-mode="full"] .plot-wrapper:last-child {
+         page-break-after: auto; /* Einde pagina 3 */
       }
 
-      /* Plots moeten passen op Portrait breedte */
-      body[data-print-mode="report"] canvas {
-         width: 100% !important; height: auto !important; 
+      body[data-print-mode="full"] canvas {
+         width: 100% !important; /* Pas op Portrait breedte */
+         height: auto !important;
+         border: none;
       }
       
-      body[data-print-mode="report"] .plot-label {
+      body[data-print-mode="full"] .plot-label {
          font-size: 1.5rem; color: #000; margin-bottom: 10px; text-align: center;
       }
     }
@@ -131,7 +129,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 7.9</h1>
+    <h1>ShipFit 7.10</h1>
   </header>
 
   <div class="container">
@@ -174,10 +172,10 @@
       <div class="arm-selection-group">
         <label>Selecteer Laadarm voor Meerplan:</label>
         <div class="radio-options">
-            <label class="radio-label"><input type="radio" name="selectedArm" value="4" onchange="showMeerplanBtn()"> Arm 4</label>
-            <label class="radio-label"><input type="radio" name="selectedArm" value="5" onchange="showMeerplanBtn()"> Arm 5</label>
-            <label class="radio-label"><input type="radio" name="selectedArm" value="7" onchange="showMeerplanBtn()"> Arm 7</label>
-            <label class="radio-label"><input type="radio" name="selectedArm" value="8" onchange="showMeerplanBtn()"> Arm 8</label>
+            <label class="radio-label"><input type="radio" name="selectedArm" value="4"> Arm 4</label>
+            <label class="radio-label"><input type="radio" name="selectedArm" value="5"> Arm 5</label>
+            <label class="radio-label"><input type="radio" name="selectedArm" value="7"> Arm 7</label>
+            <label class="radio-label"><input type="radio" name="selectedArm" value="8"> Arm 8</label>
         </div>
       </div>
 
@@ -185,7 +183,7 @@
         <button type="button" class="btn-secondary" onclick="resetForm()">Wis Alles</button>
         <button type="button" class="btn-primary" onclick="checkAfmeren()">Controleer</button>
         <button type="button" class="btn-action" onclick="maakMeerplan()">Maak Meerplan</button>
-        <button type="button" class="btn-pdf" onclick="printReport()">Download PDF</button>
+        <button type="button" class="btn-pdf" onclick="printSmartPDF()">Download PDF</button>
       </div>
     </form>
     
@@ -226,12 +224,6 @@
     document.getElementById('resultaten').innerHTML = '';
     document.getElementById('resultaten').classList.remove('visible');
     document.getElementById('plot-container').style.display = 'none';
-  }
-
-  function showMeerplanBtn() {
-      // Sla keuze op
-      const selected = document.querySelector('input[name="selectedArm"]:checked');
-      if(selected) localStorage.setItem('shipfit_selected_arm', selected.value);
   }
 
   async function handleFileUpload(input) {
@@ -313,7 +305,7 @@
               if (el) el.value = value; 
               if(key === 'selectedArm' && value) { 
                   const radio = document.querySelector(`input[name="selectedArm"][value="${value}"]`); 
-                  if(radio) { radio.checked = true; showMeerplanBtn(); }
+                  if(radio) { radio.checked = true; }
               } 
           } 
       } 
@@ -327,6 +319,7 @@
     ctx.clearRect(0, 0, width, height);
     const midX = width / 2; const scale = 2.4; 
     
+    // Verticale posities volgens tekening
     const yBerthing = 200; 
     const yPlatformFront = 200; 
     const yPlatformBack = 140; 
@@ -362,11 +355,11 @@
     ctx.fillRect(midX-(20*scale), yPlatformBack, 40*scale, (yPlatformFront-yPlatformBack)); 
     ctx.strokeRect(midX-(20*scale), yPlatformBack, 40*scale, (yPlatformFront-yPlatformBack));
     
-    // C5 Label LinksBoven
+    // C5 Label
     ctx.fillStyle = '#000'; 
     ctx.fillRect(midX - 6, yPlatformFront - 6, 12, 12); 
     ctx.textAlign = 'right'; ctx.font = 'bold 12px Arial'; 
-    ctx.fillText("C5", midX - 8, yPlatformFront - 8);
+    ctx.fillText("C5", midX - 8, yPlatformFront - 8); 
 
     const arms=[{id:'4',x:armPositions['4'],color:'#d32f2f'},{id:'5',x:armPositions['5'],color:'#c62828'},{id:'7',x:armPositions['7'],color:'#b71c1c'},{id:'8',x:armPositions['8'],color:'#8e0000'}];
     ctx.font='bold 10px Arial'; ctx.textAlign='center'; 
@@ -437,7 +430,7 @@
   }
 
   function checkAfmeren() {
-    const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0; const pb = parseFloat(document.getElementById('pbTotal').value) || 0; const loa = parseFloat(document.getElementById('loa').value) || 0; const freeboard = parseFloat(document.getElementById('freeboard').value) || 0; const manifold = parseFloat(document.getElementById('manifold').value) || 0; const deadweight = parseFloat(document.getElementById('deadweight').value) || 0;
+    const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0; const pb = parseFloat(document.getElementById('pbTotal').value) || 0; const loa = parseFloat(document.getElementById('loa').value) || 0; const deadweight = parseFloat(document.getElementById('deadweight').value) || 0; const freeboard = parseFloat(document.getElementById('freeboard').value) || 0; const manifold = parseFloat(document.getElementById('manifold').value) || 0;
     const selected = document.querySelector('input[name="selectedArm"]:checked');
 
     if (fwd === 0 || aft === 0) { alert("Vul eerst scheepsgegevens in."); return; }
@@ -451,9 +444,7 @@
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
     html += '</div>';
 
-    // Rekenresultaten van de armen (past het bereik?) - TOON DIT ALTIJD
     const armConfig = [{ name: 'Arm 4', reqFwd: 28.35, reqAft: 19.68 }, { name: 'Arm 5', reqFwd: 30.94, reqAft: 17.09 }, { name: 'Arm 7', reqFwd: 36.58, reqAft: 11.45 }, { name: 'Arm 8', reqFwd: 39.17, reqAft: 8.86 }];
-    
     const renderArms = (mooringSide) => { 
         let output = `<div class="arm-container"><div class="arm-header">Afmeren ${mooringSide}</div><div class="arm-row">`; 
         armConfig.forEach(arm => { 
@@ -505,20 +496,15 @@
   }
 
   function printSmartPDF() {
-      // 1. Check
       const selected = document.querySelector('input[name="selectedArm"]:checked');
-      
-      // Update resultaten eerst
-      checkAfmeren();
-
       if (selected) {
-          // Als arm geselecteerd: Report + Plots
-          document.body.setAttribute('data-print-mode', 'report'); // Uses the full layout defined in CSS
-          // Maar wacht, CSS is nu aangepast voor Pagina 1 (data) + Pagina 2/3 (plots)
-          // als er een arm is geselecteerd, worden plots getekend en zijn ze zichtbaar in de DOM
+          const fwd = parseFloat(document.getElementById('fwd').value) || 0; 
+          const aft = parseFloat(document.getElementById('aft').value) || 0;
+          const armId = selected.value; const offset = armPositions[armId];
+          drawDualPlots(fwd, aft, offset, armId);
+          document.body.setAttribute('data-print-mode', 'report'); // REPORT Mode: 3 Pages
       } else {
-          // Geen arm: Alleen Pagina 1 (data), plots zijn verborgen via JS
-          document.body.setAttribute('data-print-mode', 'report');
+          document.body.setAttribute('data-print-mode', 'simple'); // SIMPLE Mode: Only Report
       }
       
       window.print();
