@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 6.9 - ZigZag Layout & Double Walkways</title>
+  <title>ShipFit 7.0 - MD4 Corrected Position</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -104,7 +104,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 6.9</h1>
+    <h1>ShipFit 7.0</h1>
   </header>
 
   <div class="container">
@@ -277,7 +277,7 @@
   function createPDF() { const res = document.getElementById('resultaten'); const plot = document.getElementById('plot-container'); if (!res.classList.contains('visible') && !plot.style.display === 'block') { alert("Voer eerst een controle of meerplan uit."); return; } const shipName = document.getElementById('shipName').value || 'Report'; const imo = document.getElementById('imo').value || ''; const oldTitle = document.title; document.title = `${shipName}_${imo}`; window.print(); setTimeout(() => { document.title = oldTitle; }, 1000); }
   function getTugSVG(tonnage) { return `<svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg"><path d="M5,55 Q25,60 50,55 T95,55" stroke="#90caf9" stroke-width="2" fill="none" opacity="0.6"/><path d="M10,40 Q5,55 25,55 L85,55 Q95,45 90,35 L10,35 Z" fill="#37474f"/><path d="M25,35 L25,15 L65,15 L65,35 Z" fill="#546e7a"/><rect x="30" y="18" width="15" height="8" fill="#b3e5fc"/><rect x="50" y="10" width="10" height="25" fill="#263238"/><text x="50" y="50" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="14" fill="#ffffff">${tonnage}t</text></svg>`; }
 
-  // --- DRAWING ENGINE (UPDATED V6.9 - DOUBLE WALKWAYS & ZIGZAG) ---
+  // --- DRAWING ENGINE (UPDATED V7.0 - MD4 POSITION CORRECTED) ---
   function drawJettyScene(ctx, fwd, aft, side, manifoldOffset, selectedArmId) {
     const width = ctx.canvas.width; const height = ctx.canvas.height;
     ctx.clearRect(0, 0, width, height);
@@ -288,7 +288,8 @@
     const yPlatformFront = 200; 
     const yPlatformBack = 140; // C5 diepte
     const yMD_Mid = 160;   // MD5, 6, 7, 8
-    const yMD_Back = 120;  // MD1, 2, 3, 4
+    const yMD_Back = 120;  // MD1, 2, 3
+    const yMD4_Pos = 140;  // MD4 lower than MD3 (120) but higher than MD_Mid (160)
 
     // Punten definities (X volgens data, Y volgens laag)
     const pts = {
@@ -305,7 +306,7 @@
         BD4: {x: 53.5,   y: yBerthing, type: 'BD'},
         MD8: {x: 79.0,   y: yMD_Mid, type: 'MD'},
         MD3: {x: 105.1,  y: yMD_Back, type: 'MD'},
-        MD4: {x: 173.4,  y: yMD_Back, type: 'MD'}
+        MD4: {x: 173.4,  y: yMD4_Pos, type: 'MD'} // AANGEPAST: MD4 Lager
     };
 
     // Helper voor dubbele lijnen
@@ -341,7 +342,7 @@
     drawDoubleLine(pts.MD7, pts.BD4);
     drawDoubleLine(pts.BD4, pts.MD8);
     drawDoubleLine(pts.MD8, pts.MD3);
-    drawDoubleLine(pts.MD3, pts.MD4);
+    drawDoubleLine(pts.MD3, pts.MD4); // Nu loopt deze schuin naar beneden
 
     // Platform C5
     ctx.fillStyle='#ccc'; ctx.strokeStyle='#444'; ctx.lineWidth=2;
