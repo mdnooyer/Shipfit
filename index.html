@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.11 - Editable Parallel Body</title>
+  <title>ShipFit 7.12 - PDF Upload Fixed</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -77,20 +77,28 @@
     .plot-label { text-align: center; font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; color: #1565c0; text-transform: uppercase; letter-spacing: 1px; }
     canvas { display: block; margin: 0 auto; border-bottom: 1px solid #eee; }
 
-    /* PRINT STYLES - SMART PDF REPORT (3 Pages, Portrait) */
+    /* PRINT STYLES */
     @media print {
       @page { margin: 1cm; size: A4 portrait; }
       body { background: white; font-family: Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .buttons, .upload-section { display: none !important; }
       hr { display: none; }
+      
       body[data-print-mode="report"] .container { width: 100%; max-width: 100%; margin: 0; padding: 0; box-shadow: none; }
       body[data-print-mode="report"] .form-group input { border: none; padding: 0; font-weight: bold; background: transparent; }
+      
+      /* Pagina 1: Data + Resultaten */
       body[data-print-mode="report"] #resultaten { display: block !important; page-break-after: always; }
+      
+      /* Pagina 2/3: Plots */
       body[data-print-mode="report"] #plot-container { display: block !important; border: none; padding: 0; margin: 0; width: 100%; }
       body[data-print-mode="report"] .plot-wrapper { page-break-after: always; padding-top: 50px; }
       body[data-print-mode="report"] .plot-wrapper:last-child { page-break-after: auto; }
       body[data-print-mode="report"] canvas { width: 100% !important; height: auto !important; }
       body[data-print-mode="report"] .plot-label { font-size: 1.5rem; color: #000; margin-bottom: 10px; text-align: center; }
+      
+      /* Simple mode (geen laadarm) */
+      body[data-print-mode="simple"] #plot-container { display: none !important; }
     }
   </style>
 </head>
@@ -98,7 +106,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 7.11</h1>
+    <h1>ShipFit 7.12</h1>
   </header>
 
   <div class="container">
@@ -175,6 +183,7 @@
   </div>
 
 <script>
+  // Zorg dat de worker correct is ingesteld
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
   const armPositions = { '4': 4.15, '5': 6.74, '7': 12.38, '8': 14.97 };
@@ -193,7 +202,6 @@
     document.getElementById('resultaten').innerHTML = '';
     document.getElementById('resultaten').classList.remove('visible');
     document.getElementById('plot-container').style.display = 'none';
-    document.getElementById('btn-meerplan-pdf').style.display = 'none';
   }
 
   function showMeerplanBtn() {
@@ -217,7 +225,13 @@
       }
       parseQ88Text(fullText);
       alert('Q88 Data succesvol ingeladen.');
-    } catch (error) { console.error(error); alert('Fout bij lezen PDF.'); } finally { document.getElementById('loading').style.display = 'none'; input.value = ''; }
+    } catch (error) { 
+        console.error(error); 
+        alert('Fout bij lezen PDF: ' + error.message); 
+    } finally { 
+        document.getElementById('loading').style.display = 'none'; 
+        input.value = ''; 
+    }
   }
 
   function parseQ88Text(text) {
@@ -246,7 +260,7 @@
 
     const section134Match = cleanText.match(/1\.34(.*?)(?:1\.35|Tonnages)/i);
     if (section134Match) {
-        const sectionText = section134Match[1]; const numbers = sectionText.match(/(\d+\.\d+)/g);
+        const numbers = section134Match[1].match(/(\d+\.\d+)/g);
         if (numbers && numbers.length >= 9) {
             document.getElementById('fwd').value = parseFloat(numbers[1]); document.getElementById('aft').value = parseFloat(numbers[4]); document.getElementById('pbTotal').value = parseFloat(numbers[7]); 
         } else {
@@ -269,7 +283,6 @@
 
   function handleDimChange() {
     const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0;
-    // ALLEEN automatisch vullen als het leeg is. Gebruiker kan overschrijven.
     if (fwd > 0 && aft > 0 && !document.getElementById('pbTotal').value) { document.getElementById('pbTotal').value = (fwd + aft).toFixed(2); } saveData();
   }
   function saveData() { const inputs = document.querySelectorAll('input'); const data = {}; inputs.forEach(input => data[input.id] = input.value); localStorage.setItem('shipfit_data', JSON.stringify(data)); }
@@ -296,8 +309,12 @@
     const midX = width / 2; const scale = 2.4; 
     
     // Verticale posities
-    const yBerthing = 200; const yPlatformFront = 200; const yPlatformBack = 140; 
-    const yMD_Mid = 160; const yMD_Back = 120; const yMD4_Pos = 140;
+    const yBerthing = 200; 
+    const yPlatformFront = 200; 
+    const yPlatformBack = 140; 
+    const yMD_Mid = 160; 
+    const yMD_Back = 120;
+    const yMD4_Pos = 140;
 
     const pts = {
         MD1: {x: -173.9, y: yMD_Back, type: 'MD'}, MD2: {x: -104.4, y: yMD_Back, type: 'MD'}, MD5: {x: -77.0,  y: yMD_Mid, type: 'MD'},
@@ -327,7 +344,7 @@
     ctx.fillRect(midX-(20*scale), yPlatformBack, 40*scale, (yPlatformFront-yPlatformBack)); 
     ctx.strokeRect(midX-(20*scale), yPlatformBack, 40*scale, (yPlatformFront-yPlatformBack));
     
-    // C5 Label LinksBoven
+    // C5 Label
     ctx.fillStyle = '#000'; 
     ctx.fillRect(midX - 6, yPlatformFront - 6, 12, 12); 
     ctx.textAlign = 'right'; ctx.font = 'bold 12px Arial'; 
@@ -386,9 +403,7 @@
     const pbLen = parseFloat(document.getElementById('pbTotal').value) || 0;
     if(pbLen > 0) {
         ctx.beginPath(); const pbStart = shipZeroX - (pbLen/2 * scale); const pbEnd = shipZeroX + (pbLen/2 * scale);
-        ctx.moveTo(pbStart, shipBotY + 15); ctx.lineTo(pbEnd, shipBotY + 15);
-        ctx.strokeStyle = '#e65100'; ctx.lineWidth = 4; ctx.stroke();
-        ctx.fillStyle = '#e65100'; ctx.textAlign = 'center'; ctx.fillText(`PB: ${pbLen}m`, shipZeroX, shipBotY + 28);
+        ctx.moveTo(pbStart, shipBotY + 15); ctx.lineTo(pbEnd, shipBotY + 15); ctx.strokeStyle = '#e65100'; ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = '#e65100'; ctx.textAlign = 'center'; ctx.fillText(`PB: ${pbLen}m`, shipZeroX, shipBotY + 28);
     }
 
     const rulerY = height - 40;
@@ -469,21 +484,13 @@
 
   function printSmartPDF() {
       const selected = document.querySelector('input[name="selectedArm"]:checked');
-      
       // Update resultaten eerst
       checkAfmeren();
 
       if (selected) {
-          // Als arm geselecteerd: Report + Plots
           document.body.setAttribute('data-print-mode', 'report'); // REPORT Mode: 3 Pages
       } else {
-          // Geen arm: Alleen Pagina 1 (data), plots zijn verborgen via JS
-          // Omdat plots verborgen zijn, zal de CSS voor 'report' mode ze wel ruimte geven,
-          // maar ze zijn leeg. Beter is om ze te verbergen in CSS als ze niet 'block' zijn in JS.
-          // De huidige CSS setup voor 'report' forceert 'display: block !important' op #plot-container.
-          // Dat is niet handig als we GEEN arm hebben.
-          // OPLOSSING: We gebruiken een aparte modus voor 'alleen tekst'
-          document.body.setAttribute('data-print-mode', 'simple'); 
+          document.body.setAttribute('data-print-mode', 'simple'); // SIMPLE Mode: Only Report
       }
       
       window.print();
