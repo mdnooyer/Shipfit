@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.16 - Stable PDF Upload</title>
+  <title>ShipFit 7.17 - PDF Upload Fixed</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -88,10 +88,8 @@
       body[data-print-mode="report"] .container { width: 100%; max-width: 100%; margin: 0; padding: 0; box-shadow: none; }
       body[data-print-mode="report"] .form-group input { border: none; padding: 0; font-weight: bold; background: transparent; }
       
-      /* Pagina 1 */
       body[data-print-mode="report"] #resultaten { display: block !important; page-break-after: always; }
       
-      /* Pagina 2 & 3 */
       body[data-print-mode="report"] #plot-container { display: block !important; border: none; padding: 0; margin: 0; width: 100%; }
       body[data-print-mode="report"] .plot-wrapper { page-break-after: always; padding-top: 50px; }
       body[data-print-mode="report"] .plot-wrapper:last-child { page-break-after: auto; }
@@ -106,7 +104,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 7.16</h1>
+    <h1>ShipFit 7.17</h1>
   </header>
 
   <div class="container">
@@ -184,7 +182,6 @@
 
 <script>
   // Initialiseer PDFJS veilig
-  var pdfjsLib = window['pdfjs-dist/build/pdf'];
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
   const armPositions = { '4': 4.15, '5': 6.74, '7': 12.38, '8': 14.97 };
@@ -220,7 +217,6 @@
       const file = input.files[0];
       const arrayBuffer = await file.arrayBuffer();
       
-      // Robuuste manier om PDF te laden
       const loadingTask = pdfjsLib.getDocument({data: arrayBuffer});
       const pdf = await loadingTask.promise;
       
@@ -448,6 +444,7 @@
     html += (pb >= 50) ? `<div class="result-item result-ok">✓ PB (${pb}m)</div>` : `<div class="result-item result-error">✕ PB < 50m</div>`;
     html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA Fout</div>`;
     
+    // AANGEPAST: VOLLEDIGE TEKST
     const sumDiff = Math.abs((fwd + aft) - pb); 
     html += (sumDiff <= 1) 
         ? `<div class="result-item result-ok">✓ Verschil tussen AFT+FWD=tot. parallel body</div>` 
@@ -512,9 +509,9 @@
       checkAfmeren();
 
       if (selected) {
-          document.body.setAttribute('data-print-mode', 'report'); 
+          document.body.setAttribute('data-print-mode', 'report'); // REPORT Mode: 3 Pages
       } else {
-          document.body.setAttribute('data-print-mode', 'simple'); 
+          document.body.setAttribute('data-print-mode', 'simple'); // SIMPLE Mode: Only Report
       }
       
       window.print();
