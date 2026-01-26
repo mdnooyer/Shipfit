@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.18 - PDF Upload Fixed</title>
+  <title>ShipFit 7.19 - PDF Fix (Stable Engine)</title>
   
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
   <style>
     :root { --primary: #1976d2; --bg: #f4f6f8; --surface: #ffffff; --text: #333; --border: #ccc; --success-bg: #e8f5e9; --success-text: #1b5e20; --error-bg: #ffebee; --error-text: #c62828; --accent: #ff9800; }
@@ -78,7 +78,7 @@
     .plot-label { text-align: center; font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; color: #1565c0; text-transform: uppercase; letter-spacing: 1px; }
     canvas { display: block; margin: 0 auto; border-bottom: 1px solid #eee; }
 
-    /* PRINT STYLES - A4 Portrait */
+    /* PRINT STYLES - SMART PDF REPORT (3 Pages, Portrait) */
     @media print {
       @page { margin: 1cm; size: A4 portrait; }
       body { background: white; font-family: Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -88,10 +88,8 @@
       body[data-print-mode="report"] .container { width: 100%; max-width: 100%; margin: 0; padding: 0; box-shadow: none; }
       body[data-print-mode="report"] .form-group input { border: none; padding: 0; font-weight: bold; background: transparent; }
       
-      /* Pagina 1: Data + Resultaten */
       body[data-print-mode="report"] #resultaten { display: block !important; page-break-after: always; }
       
-      /* Pagina 2/3: Plots */
       body[data-print-mode="report"] #plot-container { display: block !important; border: none; padding: 0; margin: 0; width: 100%; }
       body[data-print-mode="report"] .plot-wrapper { page-break-after: always; padding-top: 50px; }
       body[data-print-mode="report"] .plot-wrapper:last-child { page-break-after: auto; }
@@ -106,7 +104,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 7.18</h1>
+    <h1>ShipFit 7.19</h1>
   </header>
 
   <div class="container">
@@ -183,8 +181,10 @@
   </div>
 
 <script>
-  // Zorg dat de worker correct is ingesteld (standaard methode)
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+  // Initialiseer PDFJS met de Worker van versie 2.16.105
+  // Dit zorgt voor stabiliteit
+  const pdfjsLib = window['pdfjs-dist/build/pdf'];
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
   const armPositions = { '4': 4.15, '5': 6.74, '7': 12.38, '8': 14.97 };
 
@@ -214,9 +214,14 @@
     if (input.files.length === 0) return;
     clearFieldsSilent();
     document.getElementById('loading').style.display = 'block';
+    
     try {
-      const arrayBuffer = await input.files[0].arrayBuffer();
-      const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+      const file = input.files[0];
+      const arrayBuffer = await file.arrayBuffer();
+      
+      const loadingTask = pdfjsLib.getDocument({data: arrayBuffer});
+      const pdf = await loadingTask.promise;
+      
       let fullText = '';
       const maxPages = Math.min(pdf.numPages, 10); 
       for (let i = 1; i <= maxPages; i++) {
@@ -226,7 +231,13 @@
       }
       parseQ88Text(fullText);
       alert('Q88 Data succesvol ingeladen.');
-    } catch (error) { console.error(error); alert('Fout bij lezen PDF.'); } finally { document.getElementById('loading').style.display = 'none'; input.value = ''; }
+    } catch (error) { 
+        console.error(error); 
+        alert('Fout bij lezen PDF: ' + error.message); 
+    } finally { 
+        document.getElementById('loading').style.display = 'none'; 
+        input.value = ''; 
+    }
   }
 
   function parseQ88Text(text) {
@@ -435,7 +446,7 @@
     html += (pb >= 50) ? `<div class="result-item result-ok">✓ PB (${pb}m)</div>` : `<div class="result-item result-error">✕ PB < 50m</div>`;
     html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA Fout</div>`;
     
-    // Volledige tekst
+    // De volledige zin
     const sumDiff = Math.abs((fwd + aft) - pb); 
     html += (sumDiff <= 1) 
         ? `<div class="result-item result-ok">✓ Verschil tussen AFT+FWD=tot. parallel body</div>` 
