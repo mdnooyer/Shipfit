@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.11 - Complete Checks</title>
+  <title>ShipFit 7.12 - Vlissingen/Antwerpen Labels</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -109,7 +109,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 7.11</h1>
+    <h1>ShipFit 7.12</h1>
   </header>
 
   <div class="container">
@@ -172,12 +172,12 @@
     <div id="plot-container" style="display:none;">
       
       <div class="plot-wrapper">
-        <div class="plot-label">Stuurboord (SB) Aanmeren (Boeg Links)</div>
+        <div class="plot-label">Stuurboord (SB) Aanmeren</div>
         <canvas id="canvasSB" width="950" height="350"></canvas>
       </div>
 
       <div class="plot-wrapper">
-        <div class="plot-label">Bakboord (PS) Aanmeren (Boeg Rechts)</div>
+        <div class="plot-label">Bakboord (PS) Aanmeren</div>
         <canvas id="canvasPS" width="950" height="350"></canvas>
       </div>
 
@@ -281,7 +281,7 @@
   function resetForm() { if(confirm("Weet je zeker dat je alles wilt wissen?")) { clearFieldsSilent(); } }
   function getTugSVG(tonnage) { return `<svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg"><path d="M5,55 Q25,60 50,55 T95,55" stroke="#90caf9" stroke-width="2" fill="none" opacity="0.6"/><path d="M10,40 Q5,55 25,55 L85,55 Q95,45 90,35 L10,35 Z" fill="#37474f"/><path d="M25,35 L25,15 L65,15 L65,35 Z" fill="#546e7a"/><rect x="30" y="18" width="15" height="8" fill="#b3e5fc"/><rect x="50" y="10" width="10" height="25" fill="#263238"/><text x="50" y="50" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="14" fill="#ffffff">${tonnage}t</text></svg>`; }
 
-  // --- DRAWING ENGINE (UPDATED V7.0 - MD4 POSITION CORRECTED) ---
+  // --- DRAWING ENGINE (UPDATED) ---
   function drawJettyScene(ctx, fwd, aft, side, manifoldOffset, selectedArmId) {
     const width = ctx.canvas.width; const height = ctx.canvas.height;
     ctx.clearRect(0, 0, width, height);
@@ -364,6 +364,16 @@
     ctx.font='bold 10px Arial'; ctx.textAlign='center'; 
     arms.forEach(arm=>{ let ax=midX+(arm.x*scale); if(arm.id === selectedArmId) { ctx.fillStyle = '#00c853'; } else { ctx.fillStyle = arm.color; } ctx.fillRect(ax-2,yPlatformFront-15,4,15); ctx.fillStyle='#000'; ctx.fillText(arm.id,ax,yPlatformFront-20); });
     
+    // NIEUW: VLISSINGEN / ANTWERPEN LABELS
+    const yDirLabel = yBerthing - 15;
+    const xVlissingen = midX + (-173.9 * scale);
+    const xAntwerpen = midX + (173.4 * scale);
+    ctx.fillStyle = '#2e7d32'; // Groen
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText("← Vlissingen", xVlissingen, yDirLabel);
+    ctx.fillText("Antwerpen →", xAntwerpen, yDirLabel);
+
     // Dolphins (Tekenen over de lijnen heen)
     const drawPoint = (p) => {
         const px = midX + (p.x * scale); const py = p.y; ctx.beginPath();
@@ -475,15 +485,7 @@
   }
 
   function checkAfmeren() {
-    const fwd = parseFloat(document.getElementById('fwd').value) || 0; 
-    const aft = parseFloat(document.getElementById('aft').value) || 0; 
-    const pb = parseFloat(document.getElementById('pbTotal').value) || 0; 
-    const loa = parseFloat(document.getElementById('loa').value) || 0; 
-    const deadweight = parseFloat(document.getElementById('deadweight').value) || 0;
-    // LET OP: freeboard en manifold worden hieronder ook opgehaald
-    const freeboard = parseFloat(document.getElementById('freeboard').value) || 0;
-    const manifold = parseFloat(document.getElementById('manifold').value) || 0;
-    const selected = document.querySelector('input[name="selectedArm"]:checked');
+    const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0; const pb = parseFloat(document.getElementById('pbTotal').value) || 0; const loa = parseFloat(document.getElementById('loa').value) || 0; const deadweight = parseFloat(document.getElementById('deadweight').value) || 0; const freeboard = parseFloat(document.getElementById('freeboard').value) || 0; const manifold = parseFloat(document.getElementById('manifold').value) || 0; const selected = document.querySelector('input[name="selectedArm"]:checked');
 
     if (fwd === 0 || aft === 0) { alert("Vul eerst scheepsgegevens in."); return; }
 
@@ -491,10 +493,9 @@
     html += (pb >= 50) ? `<div class="result-item result-ok">✓ PB (${pb}m)</div>` : `<div class="result-item result-error">✕ PB < 50m</div>`;
     html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA Fout</div>`;
     
-    // Herstelde checks (Geometry, FB, Manifold) met correcte tekst
+    // Herstelde checks (Geometry, FB, Manifold)
     const sumDiff = Math.abs((fwd + aft) - pb); 
-    html += (sumDiff <= 1) ? `<div class="result-item result-ok">✓ Verschil tussen AFT+FWD=PB</div>` : `<div class="result-item result-error">✕ Verschil tussen AFT+FWD=PB</div>`;
-    
+    html += (sumDiff <= 1) ? `<div class="result-item result-ok">✓ Verschil tussen AFT+FWD=tot. parallel body</div>` : `<div class="result-item result-error">✕ Verschil tussen AFT+FWD=tot. parallel body</div>`;
     html += (freeboard <= 14.4) ? `<div class="result-item result-ok">✓ FB (${freeboard}m)</div>` : `<div class="result-item result-error">✕ FB > 14.4m</div>`;
     html += (manifold <= 16.4) ? `<div class="result-item result-ok">✓ Manifold</div>` : `<div class="result-item result-error">✕ Manifold > 16.4m</div>`;
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
@@ -505,11 +506,20 @@
     reqTugs.forEach(t => { html += `<div class="tug-item">${getTugSVG(t)}<div class="tug-caption">BP</div></div>`; });
     html += '</div></div>';
 
+    // AANGEPAST: Tekst "Voorschip FWD"
+    html += '<div class="section-title">Meerpatroon (Mooring Pattern)</div>'; 
+    if(deadweight > 0) { 
+        let l, b, s; 
+        if(deadweight < 20000) { l = 2; b = 2; s = 2; } 
+        else if(deadweight <= 40000) { l = 2; b = 3; s = 2; } 
+        else { l = 3; b = 3; s = 2; } 
+        html += `<div class="arm-row"><div class="arm-block mooring-box"><div class="mooring-header">Voorschip FWD</div><div class="mooring-details"><div class="mooring-line"><span>Headlines:</span> <strong>${l}</strong></div><div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div><div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div></div></div><div class="arm-block mooring-box"><div class="mooring-header">Achterschip (Aft)</div><div class="mooring-details"><div class="mooring-line"><span>Sternlines:</span> <strong>${l}</strong></div><div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div><div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div></div></div></div><div style="text-align:center; font-size:0.8rem; margin-top:5px; color:#666;">Configuratie: ${l} + ${b} + ${s} (Fore & Aft)</div>`; 
+    }
+
     const resDiv = document.getElementById('resultaten'); 
     resDiv.innerHTML = html; 
     resDiv.classList.add('visible');
 
-    // Alleen tekenen als arm geselecteerd is
     if(selected) {
         localStorage.setItem('shipfit_selected_arm', selected.value);
         const armId = selected.value; const offset = armPositions[armId];
