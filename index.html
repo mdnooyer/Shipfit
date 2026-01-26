@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.11 - Editable Parallel Body</title>
+  <title>ShipFit 7.10 - Tekstaanpassing Geometrie</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -40,7 +40,8 @@
     .btn-action:hover { background: #f57c00; }
     .btn-pdf { background: #d84315; color: white; }
     
-    .btn-meerplan-pdf { background: #2e7d32; color: white; display: none; }
+    /* Nieuwe knopstijl voor Meerplan PDF */
+    .btn-meerplan-pdf { background: #2e7d32; color: white; display: none; } /* Standaard verborgen */
     .btn-meerplan-pdf:hover { background: #1b5e20; }
 
     #resultaten { margin-top: 30px; display: none; }
@@ -79,18 +80,50 @@
 
     /* PRINT STYLES - SMART PDF REPORT (3 Pages, Portrait) */
     @media print {
-      @page { margin: 1cm; size: A4 portrait; }
+      @page { margin: 1cm; size: A4 portrait; } /* Forceer Portrait voor Pagina 1 */
+      
       body { background: white; font-family: Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      
       .buttons, .upload-section { display: none !important; }
       hr { display: none; }
-      body[data-print-mode="report"] .container { width: 100%; max-width: 100%; margin: 0; padding: 0; box-shadow: none; }
-      body[data-print-mode="report"] .form-group input { border: none; padding: 0; font-weight: bold; background: transparent; }
-      body[data-print-mode="report"] #resultaten { display: block !important; page-break-after: always; }
-      body[data-print-mode="report"] #plot-container { display: block !important; border: none; padding: 0; margin: 0; width: 100%; }
-      body[data-print-mode="report"] .plot-wrapper { page-break-after: always; padding-top: 50px; }
-      body[data-print-mode="report"] .plot-wrapper:last-child { page-break-after: auto; }
-      body[data-print-mode="report"] canvas { width: 100% !important; height: auto !important; }
-      body[data-print-mode="report"] .plot-label { font-size: 1.5rem; color: #000; margin-bottom: 10px; text-align: center; }
+
+      /* Modus: REPORT (3 Pagina's) */
+      body[data-print-mode="report"] .container {
+          width: 100%; max-width: 100%; margin: 0; padding: 0; box-shadow: none;
+      }
+      
+      body[data-print-mode="report"] .form-group input { 
+          border: none; padding: 0; font-weight: bold; background: transparent; 
+      }
+
+      /* Pagina 1: Resultaten */
+      body[data-print-mode="report"] #resultaten {
+          display: block !important;
+          page-break-after: always;
+      }
+
+      /* Pagina 2 & 3: Plots */
+      body[data-print-mode="report"] #plot-container {
+         display: block !important; border: none; padding: 0; margin: 0; width: 100%;
+      }
+      
+      body[data-print-mode="report"] .plot-wrapper {
+         page-break-after: always; /* Elke plot op nieuwe pagina */
+         padding-top: 50px;
+      }
+      
+      body[data-print-mode="report"] .plot-wrapper:last-child {
+         page-break-after: auto;
+      }
+
+      /* Plots moeten passen op Portrait breedte */
+      body[data-print-mode="report"] canvas {
+         width: 100% !important; height: auto !important; 
+      }
+      
+      body[data-print-mode="report"] .plot-label {
+         font-size: 1.5rem; color: #000; margin-bottom: 10px; text-align: center;
+      }
     }
   </style>
 </head>
@@ -98,7 +131,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 7.11</h1>
+    <h1>ShipFit 7.10</h1>
   </header>
 
   <div class="container">
@@ -119,7 +152,7 @@
       <hr>
       <div class="row-flex">
         <div class="form-group"><label for="loa">Length overall (1.27) [m]</label><input id="loa" type="number" step="0.01" placeholder="100-280" oninput="saveData()"></div>
-        <div class="form-group"><label for="pbTotal">tot. parallel body (1.34) Ballast cond. [m]</label><input id="pbTotal" type="number" step="0.01" placeholder="Min 50" oninput="saveData()"></div>
+        <div class="form-group"><label for="pbTotal">tot. parallel body (1.34) Ballast cond. [m]</label><input id="pbTotal" type="number" step="0.01" placeholder="Min 50" readonly style="color:#666;"></div>
         <div class="form-group"><label for="manifold">Hoogte manifold (8.24) [m]</label><input id="manifold" type="number" step="0.01" placeholder="Max 16.4" oninput="saveData()"></div>
       </div>
       <div class="row-flex">
@@ -197,6 +230,7 @@
   }
 
   function showMeerplanBtn() {
+      // Sla keuze op
       const selected = document.querySelector('input[name="selectedArm"]:checked');
       if(selected) localStorage.setItem('shipfit_selected_arm', selected.value);
   }
@@ -269,7 +303,6 @@
 
   function handleDimChange() {
     const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0;
-    // ALLEEN automatisch vullen als het leeg is. Gebruiker kan overschrijven.
     if (fwd > 0 && aft > 0 && !document.getElementById('pbTotal').value) { document.getElementById('pbTotal').value = (fwd + aft).toFixed(2); } saveData();
   }
   function saveData() { const inputs = document.querySelectorAll('input'); const data = {}; inputs.forEach(input => data[input.id] = input.value); localStorage.setItem('shipfit_data', JSON.stringify(data)); }
@@ -295,9 +328,13 @@
     ctx.clearRect(0, 0, width, height);
     const midX = width / 2; const scale = 2.4; 
     
-    // Verticale posities
-    const yBerthing = 200; const yPlatformFront = 200; const yPlatformBack = 140; 
-    const yMD_Mid = 160; const yMD_Back = 120; const yMD4_Pos = 140;
+    // Verticale posities volgens tekening
+    const yBerthing = 200; 
+    const yPlatformFront = 200; 
+    const yPlatformBack = 140; 
+    const yMD_Mid = 160; 
+    const yMD_Back = 120;
+    const yMD4_Pos = 140;
 
     const pts = {
         MD1: {x: -173.9, y: yMD_Back, type: 'MD'}, MD2: {x: -104.4, y: yMD_Back, type: 'MD'}, MD5: {x: -77.0,  y: yMD_Mid, type: 'MD'},
@@ -386,9 +423,7 @@
     const pbLen = parseFloat(document.getElementById('pbTotal').value) || 0;
     if(pbLen > 0) {
         ctx.beginPath(); const pbStart = shipZeroX - (pbLen/2 * scale); const pbEnd = shipZeroX + (pbLen/2 * scale);
-        ctx.moveTo(pbStart, shipBotY + 15); ctx.lineTo(pbEnd, shipBotY + 15);
-        ctx.strokeStyle = '#e65100'; ctx.lineWidth = 4; ctx.stroke();
-        ctx.fillStyle = '#e65100'; ctx.textAlign = 'center'; ctx.fillText(`PB: ${pbLen}m`, shipZeroX, shipBotY + 28);
+        ctx.moveTo(pbStart, shipBotY + 15); ctx.lineTo(pbEnd, shipBotY + 15); ctx.strokeStyle = '#e65100'; ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = '#e65100'; ctx.textAlign = 'center'; ctx.fillText(`PB: ${pbLen}m`, shipZeroX, shipBotY + 28);
     }
 
     const rulerY = height - 40;
@@ -404,7 +439,7 @@
   }
 
   function checkAfmeren() {
-    const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0; const pb = parseFloat(document.getElementById('pbTotal').value) || 0; const loa = parseFloat(document.getElementById('loa').value) || 0; const deadweight = parseFloat(document.getElementById('deadweight').value) || 0; const freeboard = parseFloat(document.getElementById('freeboard').value) || 0; const manifold = parseFloat(document.getElementById('manifold').value) || 0;
+    const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0; const pb = parseFloat(document.getElementById('pbTotal').value) || 0; const loa = parseFloat(document.getElementById('loa').value) || 0; const freeboard = parseFloat(document.getElementById('freeboard').value) || 0; const manifold = parseFloat(document.getElementById('manifold').value) || 0; const deadweight = parseFloat(document.getElementById('deadweight').value) || 0;
     const selected = document.querySelector('input[name="selectedArm"]:checked');
 
     if (fwd === 0 || aft === 0) { alert("Vul eerst scheepsgegevens in."); return; }
@@ -418,7 +453,9 @@
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
     html += '</div>';
 
+    // Rekenresultaten van de armen (past het bereik?) - TOON DIT ALTIJD
     const armConfig = [{ name: 'Arm 4', reqFwd: 28.35, reqAft: 19.68 }, { name: 'Arm 5', reqFwd: 30.94, reqAft: 17.09 }, { name: 'Arm 7', reqFwd: 36.58, reqAft: 11.45 }, { name: 'Arm 8', reqFwd: 39.17, reqAft: 8.86 }];
+    
     const renderArms = (mooringSide) => { 
         let output = `<div class="arm-container"><div class="arm-header">Afmeren ${mooringSide}</div><div class="arm-row">`; 
         armConfig.forEach(arm => { 
@@ -445,6 +482,7 @@
     reqTugs.forEach(t => { html += `<div class="tug-item">${getTugSVG(t)}<div class="tug-caption">BP</div></div>`; });
     html += '</div></div>';
 
+    // Meerpatroon
     html += '<div class="section-title">Meerpatroon (Mooring Pattern)</div>'; 
     if(deadweight > 0) { 
         let l, b, s; 
@@ -458,6 +496,7 @@
     resDiv.innerHTML = html; 
     resDiv.classList.add('visible');
 
+    // Als een arm geselecteerd is, tekenen we de plot (preview), anders niet
     if(selected) {
         localStorage.setItem('shipfit_selected_arm', selected.value);
         const armId = selected.value; const offset = armPositions[armId];
@@ -468,6 +507,7 @@
   }
 
   function printSmartPDF() {
+      // 1. Check
       const selected = document.querySelector('input[name="selectedArm"]:checked');
       
       // Update resultaten eerst
@@ -475,15 +515,12 @@
 
       if (selected) {
           // Als arm geselecteerd: Report + Plots
-          document.body.setAttribute('data-print-mode', 'report'); // REPORT Mode: 3 Pages
+          document.body.setAttribute('data-print-mode', 'report'); // Uses the full layout defined in CSS
+          // Maar wacht, CSS is nu aangepast voor Pagina 1 (data) + Pagina 2/3 (plots)
+          // als er een arm is geselecteerd, worden plots getekend en zijn ze zichtbaar in de DOM
       } else {
           // Geen arm: Alleen Pagina 1 (data), plots zijn verborgen via JS
-          // Omdat plots verborgen zijn, zal de CSS voor 'report' mode ze wel ruimte geven,
-          // maar ze zijn leeg. Beter is om ze te verbergen in CSS als ze niet 'block' zijn in JS.
-          // De huidige CSS setup voor 'report' forceert 'display: block !important' op #plot-container.
-          // Dat is niet handig als we GEEN arm hebben.
-          // OPLOSSING: We gebruiken een aparte modus voor 'alleen tekst'
-          document.body.setAttribute('data-print-mode', 'simple'); 
+          document.body.setAttribute('data-print-mode', 'report');
       }
       
       window.print();
