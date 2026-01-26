@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.14 - Vlissingen/Antwerpen Labels</title>
+  <title>ShipFit 7.15 - Fixed & Complete</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -78,6 +78,7 @@
     .plot-label { text-align: center; font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; color: #1565c0; text-transform: uppercase; letter-spacing: 1px; }
     canvas { display: block; margin: 0 auto; border-bottom: 1px solid #eee; }
 
+    /* PRINT STYLES - A4 Portrait, 3 pages if arm selected */
     @media print {
       @page { margin: 1cm; size: A4 portrait; }
       body { background: white; font-family: Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -87,14 +88,17 @@
       body[data-print-mode="report"] .container { width: 100%; max-width: 100%; margin: 0; padding: 0; box-shadow: none; }
       body[data-print-mode="report"] .form-group input { border: none; padding: 0; font-weight: bold; background: transparent; }
       
+      /* Pagina 1: Data + Resultaten */
       body[data-print-mode="report"] #resultaten { display: block !important; page-break-after: always; }
       
+      /* Pagina 2/3: Plots */
       body[data-print-mode="report"] #plot-container { display: block !important; border: none; padding: 0; margin: 0; width: 100%; }
       body[data-print-mode="report"] .plot-wrapper { page-break-after: always; padding-top: 50px; }
       body[data-print-mode="report"] .plot-wrapper:last-child { page-break-after: auto; }
       body[data-print-mode="report"] canvas { width: 100% !important; height: auto !important; }
       body[data-print-mode="report"] .plot-label { font-size: 1.5rem; color: #000; margin-bottom: 10px; text-align: center; }
       
+      /* Simple mode (geen laadarm) */
       body[data-print-mode="simple"] #plot-container { display: none !important; }
     }
   </style>
@@ -103,7 +107,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 7.14</h1>
+    <h1>ShipFit 7.15</h1>
   </header>
 
   <div class="container">
@@ -345,7 +349,7 @@
     ctx.font='bold 10px Arial'; ctx.textAlign='center'; 
     arms.forEach(arm=>{ let ax=midX+(arm.x*scale); if(arm.id === selectedArmId) { ctx.fillStyle = '#00c853'; } else { ctx.fillStyle = arm.color; } ctx.fillRect(ax-2,yPlatformFront-15,4,15); ctx.fillStyle='#000'; ctx.fillText(arm.id,ax,yPlatformFront-20); });
     
-    // Vlissingen / Antwerpen Labels (AANGEPAST)
+    // Labels Vlissingen / Antwerpen
     const yDirLabel = yBerthing - 15;
     const xVlissingen = midX + (-173.9 * scale);
     const xAntwerpen = midX + (173.4 * scale);
@@ -354,10 +358,7 @@
     ctx.font = 'bold 12px Arial';
     ctx.textAlign = 'center';
     
-    // Links: Pijltje voor de V
     ctx.fillText("← Vlissingen", xVlissingen, yDirLabel);
-    
-    // Rechts: Pijltje na de n
     ctx.fillText("Antwerpen →", xAntwerpen, yDirLabel);
 
     const drawPoint = (p) => {
@@ -433,6 +434,8 @@
     let html = '<div class="section-title">Controles & Limieten</div><div class="result-grid">';
     html += (pb >= 50) ? `<div class="result-item result-ok">✓ PB (${pb}m)</div>` : `<div class="result-item result-error">✕ PB < 50m</div>`;
     html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA Fout</div>`;
+    
+    // De volledige zin
     const sumDiff = Math.abs((fwd + aft) - pb); 
     html += (sumDiff <= 1) 
         ? `<div class="result-item result-ok">✓ Verschil tussen AFT+FWD=tot. parallel body</div>` 
@@ -470,7 +473,6 @@
     reqTugs.forEach(t => { html += `<div class="tug-item">${getTugSVG(t)}<div class="tug-caption">BP</div></div>`; });
     html += '</div></div>';
 
-    // AANGEPAST: Tekst naar Voorschip FWD
     html += '<div class="section-title">Meerpatroon (Mooring Pattern)</div>'; 
     if(deadweight > 0) { 
         let l, b, s; 
@@ -495,7 +497,6 @@
 
   function printSmartPDF() {
       const selected = document.querySelector('input[name="selectedArm"]:checked');
-      // Update resultaten eerst
       checkAfmeren();
 
       if (selected) {
