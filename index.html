@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.17 - PDF Upload Fixed</title>
+  <title>ShipFit 7.10 - Restored Base</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -40,15 +40,15 @@
     .btn-action:hover { background: #f57c00; }
     .btn-pdf { background: #d84315; color: white; }
     
-    .btn-meerplan-pdf { background: #2e7d32; color: white; display: none; }
+    /* Nieuwe knopstijl voor Meerplan PDF */
+    .btn-meerplan-pdf { background: #2e7d32; color: white; display: none; } /* Standaard verborgen */
     .btn-meerplan-pdf:hover { background: #1b5e20; }
 
     #resultaten { margin-top: 30px; display: none; }
     #resultaten.visible { display: block; }
     .section-title { font-size: 1.1rem; color: var(--primary); margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 25px; font-weight: bold; }
-    
     .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .result-item { padding: 12px; border-radius: 6px; font-size: 0.9rem; display: flex; align-items: center; } 
+    .result-item { padding: 12px; border-radius: 6px; font-size: 0.95rem; }
     .result-ok { background: var(--success-bg); border: 1px solid #a5d6a7; color: var(--success-text); }
     .result-error { background: var(--error-bg); border: 1px solid #ef9a9a; color: var(--error-text); }
     
@@ -78,7 +78,7 @@
     .plot-label { text-align: center; font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; color: #1565c0; text-transform: uppercase; letter-spacing: 1px; }
     canvas { display: block; margin: 0 auto; border-bottom: 1px solid #eee; }
 
-    /* PRINT STYLES */
+    /* PRINT STYLES - SMART PDF REPORT (3 Pages, Portrait) */
     @media print {
       @page { margin: 1cm; size: A4 portrait; }
       body { background: white; font-family: Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -88,14 +88,17 @@
       body[data-print-mode="report"] .container { width: 100%; max-width: 100%; margin: 0; padding: 0; box-shadow: none; }
       body[data-print-mode="report"] .form-group input { border: none; padding: 0; font-weight: bold; background: transparent; }
       
+      /* Pagina 1: Data + Resultaten */
       body[data-print-mode="report"] #resultaten { display: block !important; page-break-after: always; }
       
+      /* Pagina 2/3: Plots */
       body[data-print-mode="report"] #plot-container { display: block !important; border: none; padding: 0; margin: 0; width: 100%; }
       body[data-print-mode="report"] .plot-wrapper { page-break-after: always; padding-top: 50px; }
       body[data-print-mode="report"] .plot-wrapper:last-child { page-break-after: auto; }
       body[data-print-mode="report"] canvas { width: 100% !important; height: auto !important; }
       body[data-print-mode="report"] .plot-label { font-size: 1.5rem; color: #000; margin-bottom: 10px; text-align: center; }
       
+      /* Simple mode (geen laadarm) */
       body[data-print-mode="simple"] #plot-container { display: none !important; }
     }
   </style>
@@ -104,7 +107,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 7.17</h1>
+    <h1>ShipFit 7.10</h1>
   </header>
 
   <div class="container">
@@ -125,7 +128,7 @@
       <hr>
       <div class="row-flex">
         <div class="form-group"><label for="loa">Length overall (1.27) [m]</label><input id="loa" type="number" step="0.01" placeholder="100-280" oninput="saveData()"></div>
-        <div class="form-group"><label for="pbTotal">tot. parallel body (1.34) Ballast cond. [m]</label><input id="pbTotal" type="number" step="0.01" placeholder="Min 50" oninput="saveData()"></div>
+        <div class="form-group"><label for="pbTotal">tot. parallel body (1.34) Ballast cond. [m]</label><input id="pbTotal" type="number" step="0.01" placeholder="Min 50" readonly style="color:#666;"></div>
         <div class="form-group"><label for="manifold">Hoogte manifold (8.24) [m]</label><input id="manifold" type="number" step="0.01" placeholder="Max 16.4" oninput="saveData()"></div>
       </div>
       <div class="row-flex">
@@ -167,12 +170,12 @@
     <div id="plot-container" style="display:none;">
       
       <div id="sb-page" class="plot-wrapper">
-        <div class="plot-label">Stuurboord (SB) Aanmeren</div>
+        <div class="plot-label">Stuurboord (SB) Aanmeren (Boeg Links)</div>
         <canvas id="canvasSB" width="950" height="350"></canvas>
       </div>
 
       <div id="ps-page" class="plot-wrapper">
-        <div class="plot-label">Bakboord (PS) Aanmeren</div>
+        <div class="plot-label">Bakboord (PS) Aanmeren (Boeg Rechts)</div>
         <canvas id="canvasPS" width="950" height="350"></canvas>
       </div>
 
@@ -181,7 +184,6 @@
   </div>
 
 <script>
-  // Initialiseer PDFJS veilig
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
   const armPositions = { '4': 4.15, '5': 6.74, '7': 12.38, '8': 14.97 };
@@ -204,6 +206,7 @@
   }
 
   function showMeerplanBtn() {
+      // Sla keuze op
       const selected = document.querySelector('input[name="selectedArm"]:checked');
       if(selected) localStorage.setItem('shipfit_selected_arm', selected.value);
   }
@@ -212,14 +215,9 @@
     if (input.files.length === 0) return;
     clearFieldsSilent();
     document.getElementById('loading').style.display = 'block';
-    
     try {
-      const file = input.files[0];
-      const arrayBuffer = await file.arrayBuffer();
-      
-      const loadingTask = pdfjsLib.getDocument({data: arrayBuffer});
-      const pdf = await loadingTask.promise;
-      
+      const arrayBuffer = await input.files[0].arrayBuffer();
+      const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
       let fullText = '';
       const maxPages = Math.min(pdf.numPages, 10); 
       for (let i = 1; i <= maxPages; i++) {
@@ -229,13 +227,7 @@
       }
       parseQ88Text(fullText);
       alert('Q88 Data succesvol ingeladen.');
-    } catch (error) { 
-        console.error(error); 
-        alert('Fout bij lezen PDF: ' + error.message); 
-    } finally { 
-        document.getElementById('loading').style.display = 'none'; 
-        input.value = ''; 
-    }
+    } catch (error) { console.error(error); alert('Fout bij lezen PDF.'); } finally { document.getElementById('loading').style.display = 'none'; input.value = ''; }
   }
 
   function parseQ88Text(text) {
@@ -358,18 +350,6 @@
     ctx.font='bold 10px Arial'; ctx.textAlign='center'; 
     arms.forEach(arm=>{ let ax=midX+(arm.x*scale); if(arm.id === selectedArmId) { ctx.fillStyle = '#00c853'; } else { ctx.fillStyle = arm.color; } ctx.fillRect(ax-2,yPlatformFront-15,4,15); ctx.fillStyle='#000'; ctx.fillText(arm.id,ax,yPlatformFront-20); });
     
-    // Labels Vlissingen / Antwerpen
-    const yDirLabel = yBerthing - 15;
-    const xVlissingen = midX + (-173.9 * scale);
-    const xAntwerpen = midX + (173.4 * scale);
-    
-    ctx.fillStyle = '#2e7d32'; // Groen
-    ctx.font = 'bold 12px Arial';
-    ctx.textAlign = 'center';
-    
-    ctx.fillText("← Vlissingen", xVlissingen, yDirLabel);
-    ctx.fillText("Antwerpen →", xAntwerpen, yDirLabel);
-
     const drawPoint = (p) => {
         const px = midX + (p.x * scale); const py = p.y; ctx.beginPath();
         if(p.type === 'MD') {
@@ -443,13 +423,7 @@
     let html = '<div class="section-title">Controles & Limieten</div><div class="result-grid">';
     html += (pb >= 50) ? `<div class="result-item result-ok">✓ PB (${pb}m)</div>` : `<div class="result-item result-error">✕ PB < 50m</div>`;
     html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA Fout</div>`;
-    
-    // AANGEPAST: VOLLEDIGE TEKST
-    const sumDiff = Math.abs((fwd + aft) - pb); 
-    html += (sumDiff <= 1) 
-        ? `<div class="result-item result-ok">✓ Verschil tussen AFT+FWD=tot. parallel body</div>` 
-        : `<div class="result-item result-error">✕ Verschil tussen AFT+FWD=tot. parallel body</div>`;
-        
+    const sumDiff = Math.abs((fwd + aft) - pb); html += (sumDiff <= 1) ? `<div class="result-item result-ok">✓ Geometrie</div>` : `<div class="result-item result-error">✕ Geometrie</div>`;
     html += (freeboard <= 14.4) ? `<div class="result-item result-ok">✓ FB (${freeboard}m)</div>` : `<div class="result-item result-error">✕ FB te hoog</div>`;
     html += (manifold <= 16.4) ? `<div class="result-item result-ok">✓ Manifold</div>` : `<div class="result-item result-error">✕ Manifold</div>`;
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
@@ -488,7 +462,7 @@
         if(deadweight < 20000) { l = 2; b = 2; s = 2; } 
         else if(deadweight <= 40000) { l = 2; b = 3; s = 2; } 
         else { l = 3; b = 3; s = 2; } 
-        html += `<div class="arm-row"><div class="arm-block mooring-box"><div class="mooring-header">Voorschip FWD</div><div class="mooring-details"><div class="mooring-line"><span>Headlines:</span> <strong>${l}</strong></div><div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div><div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div></div></div><div class="arm-block mooring-box"><div class="mooring-header">Achterschip (Aft)</div><div class="mooring-details"><div class="mooring-line"><span>Sternlines:</span> <strong>${l}</strong></div><div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div><div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div></div></div></div><div style="text-align:center; font-size:0.8rem; margin-top:5px; color:#666;">Configuratie: ${l} + ${b} + ${s} (Fore & Aft)</div>`; 
+        html += `<div class="arm-row"><div class="arm-block mooring-box"><div class="mooring-header">Voorschip (Fore)</div><div class="mooring-details"><div class="mooring-line"><span>Headlines:</span> <strong>${l}</strong></div><div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div><div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div></div></div><div class="arm-block mooring-box"><div class="mooring-header">Achterschip (Aft)</div><div class="mooring-details"><div class="mooring-line"><span>Sternlines:</span> <strong>${l}</strong></div><div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div><div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div></div></div></div><div style="text-align:center; font-size:0.8rem; margin-top:5px; color:#666;">Configuratie: ${l} + ${b} + ${s} (Fore & Aft)</div>`; 
     }
 
     const resDiv = document.getElementById('resultaten'); 
@@ -509,9 +483,9 @@
       checkAfmeren();
 
       if (selected) {
-          document.body.setAttribute('data-print-mode', 'report'); // REPORT Mode: 3 Pages
+          document.body.setAttribute('data-print-mode', 'report'); 
       } else {
-          document.body.setAttribute('data-print-mode', 'simple'); // SIMPLE Mode: Only Report
+          document.body.setAttribute('data-print-mode', 'simple'); 
       }
       
       window.print();
