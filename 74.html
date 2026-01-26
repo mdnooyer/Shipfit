@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.4 - Base Version</title>
+  <title>ShipFit 7.7 - Complete Checks</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -104,7 +104,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 7.4</h1>
+    <h1>ShipFit 7.6</h1>
   </header>
 
   <div class="container">
@@ -471,38 +471,90 @@
   }
 
   function checkAfmeren() {
-    const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0; const pb = parseFloat(document.getElementById('pbTotal').value) || 0; const loa = parseFloat(document.getElementById('loa').value) || 0; const deadweight = parseFloat(document.getElementById('deadweight').value) || 0; const selected = document.querySelector('input[name="selectedArm"]:checked');
+    const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0; const pb = parseFloat(document.getElementById('pbTotal').value) || 0; const loa = parseFloat(document.getElementById('loa').value) || 0; const freeboard = parseFloat(document.getElementById('freeboard').value) || 0; const manifold = parseFloat(document.getElementById('manifold').value) || 0; const deadweight = parseFloat(document.getElementById('deadweight').value) || 0;
+    const selected = document.querySelector('input[name="selectedArm"]:checked');
 
-    if (!selected) { alert("Selecteer een laadarm voordat je controleert."); return; }
+    // HIER DE WIJZIGING: GEEN LAADARM VERPLICHT VOOR ALLEEN CHECK
+    // if (!selected) { alert("Selecteer een laadarm voordat je controleert."); return; } <--- WEG
+    
     if (fwd === 0 || aft === 0) { alert("Vul eerst scheepsgegevens in."); return; }
 
     let html = '<div class="section-title">Controles & Limieten</div><div class="result-grid">';
     html += (pb >= 50) ? `<div class="result-item result-ok">✓ PB (${pb}m)</div>` : `<div class="result-item result-error">✕ PB < 50m</div>`;
     html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA Fout</div>`;
+    // De geometrie check vereist forward/aft + pb, dus die kan gewoon
+    const sumDiff = Math.abs((fwd + aft) - pb); html += (sumDiff <= 1) ? `<div class="result-item result-ok">✓ Geometrie</div>` : `<div class="result-item result-error">✕ Geometrie</div>`;
+    html += (freeboard <= 14.4) ? `<div class="result-item result-ok">✓ FB (${freeboard}m)</div>` : `<div class="result-item result-error">✕ FB te hoog</div>`;
+    html += (manifold <= 16.4) ? `<div class="result-item result-ok">✓ Manifold</div>` : `<div class="result-item result-error">✕ Manifold</div>`;
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
     html += '</div>';
+
+    // OOK DE LAADARMEN CHECKEN (TEKSTUEEL) ALS ER NOG GEEN SELECTIE IS
+    // We laten gewoon alle armen zien en of ze passen.
+    const armConfig = [{ name: 'Arm 4', reqFwd: 28.35, reqAft: 19.68 }, { name: 'Arm 5', reqFwd: 30.94, reqAft: 17.09 }, { name: 'Arm 7', reqFwd: 36.58, reqAft: 11.45 }, { name: 'Arm 8', reqFwd: 39.17, reqAft: 8.86 }];
+    
+    const renderArms = (mooringSide) => { 
+        let output = `<div class="arm-container"><div class="arm-header">Afmeren ${mooringSide}</div><div class="arm-row">`; 
+        armConfig.forEach(arm => { 
+            let reqFwd, reqAft; 
+            if (mooringSide === 'Stuurboord (SB)') { reqFwd = arm.reqFwd; reqAft = arm.reqAft; } 
+            else { reqFwd = arm.reqAft; reqAft = arm.reqFwd; } 
+            
+            if (fwd > reqFwd && aft > reqAft) { 
+                const moveFwd = (aft - reqAft).toFixed(1); const moveAft = (fwd - reqFwd).toFixed(1); 
+                output += `<div class="arm-block result-ok"><div class="arm-title">${arm.name}</div><div class="offset-info"><div class="offset-line"><span>Fwd:</span><span class="offset-val">+${moveFwd}</span></div><div class="offset-line"><span>Aft:</span><span class="offset-val">+${moveAft}</span></div></div></div>`; 
+            } else { 
+                output += `<div class="arm-block result-error"><div class="arm-title">${arm.name}</div><div>Past niet</div></div>`; 
+            } 
+        }); 
+        output += '</div></div>'; return output; 
+    };
+
+    html += '<div class="section-title">Laadarmen (Check)</div>'; 
+    html += renderArms('Bakboord (PS)'); 
+    html += renderArms('Stuurboord (SB)');
 
     let reqTugs = (loa < 125) ? [35,35] : (loa < 150) ? [50,40] : (loa < 220) ? [60,50,50] : [60,60,60,60];
     html += '<div class="section-title">Vereiste Sleepboten</div><div class="tug-section"><div class="tug-row">';
     reqTugs.forEach(t => { html += `<div class="tug-item">${getTugSVG(t)}<div class="tug-caption">BP</div></div>`; });
     html += '</div></div>';
 
+    // Meerpatroon
+    html += '<div class="section-title">Meerpatroon (Mooring Pattern)</div>'; 
+    if(deadweight > 0) { 
+        let l, b, s; 
+        if(deadweight < 20000) { l = 2; b = 2; s = 2; } 
+        else if(deadweight <= 40000) { l = 2; b = 3; s = 2; } 
+        else { l = 3; b = 3; s = 2; } 
+        html += `<div class="arm-row"><div class="arm-block mooring-box"><div class="mooring-header">Voorschip (Fore)</div><div class="mooring-details"><div class="mooring-line"><span>Headlines:</span> <strong>${l}</strong></div><div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div><div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div></div></div><div class="arm-block mooring-box"><div class="mooring-header">Achterschip (Aft)</div><div class="mooring-details"><div class="mooring-line"><span>Sternlines:</span> <strong>${l}</strong></div><div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div><div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div></div></div></div><div style="text-align:center; font-size:0.8rem; margin-top:5px; color:#666;">Configuratie: ${l} + ${b} + ${s} (Fore & Aft)</div>`; 
+    }
+
     const resDiv = document.getElementById('resultaten'); 
     resDiv.innerHTML = html; 
     resDiv.classList.add('visible');
 
-    localStorage.setItem('shipfit_selected_arm', selected.value);
-    const armId = selected.value; const offset = armPositions[armId];
-    drawDualPlots(fwd, aft, offset, armId);
+    // ALLEEN ALS er een arm geselecteerd is, tekenen we de plot nu alvast (maar niet verplicht)
+    if(selected) {
+        localStorage.setItem('shipfit_selected_arm', selected.value);
+        const armId = selected.value; const offset = armPositions[armId];
+        drawDualPlots(fwd, aft, offset, armId);
+    } else {
+        // Anders verbergen we de plot container
+        document.getElementById('plot-container').style.display = 'none';
+    }
   }
 
   function maakMeerplan() {
+    // Hier is de selectie WEL verplicht omdat je een plot moet maken
     const selected = document.querySelector('input[name="selectedArm"]:checked');
     if (!selected) { alert("Selecteer eerst een laadarm."); return; }
+    
+    // Voer de check uit (en teken de plot)
     checkAfmeren();
-    window.print();
+    
+    // Scroll naar de plot
+    document.getElementById('plot-container').scrollIntoView({behavior: 'smooth'});
   }
 </script>
 </body>
 </html>
-
