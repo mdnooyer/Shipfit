@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.11</title>
+  <title>ShipFit 7.11 - Complete Checks</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -98,11 +98,9 @@
       .plot-wrapper { page-break-inside: avoid; margin-bottom: 20px; }
       canvas { width: 100%; height: auto; }
       
-      /* Print logica voor slim rapport */
       body[data-print-mode="report"] #plot-container { display: block !important; }
       body[data-print-mode="report"] .plot-wrapper { page-break-after: always; }
       body[data-print-mode="report"] .plot-wrapper:last-child { page-break-after: auto; }
-      
       body[data-print-mode="simple"] #plot-container { display: none !important; }
     }
   </style>
@@ -132,7 +130,7 @@
       <hr>
       <div class="row-flex">
         <div class="form-group"><label for="loa">Length overall (1.27) [m]</label><input id="loa" type="number" step="0.01" placeholder="100-280" oninput="saveData()"></div>
-        <div class="form-group"><label for="pbTotal">tot. parallel body (1.34) Ballast cond. [m]</label><input id="pbTotal" type="number" step="0.01" placeholder="Min 50" readonly style="color:#666;"></div>
+        <div class="form-group"><label for="pbTotal">tot. parallel body (1.34) Ballast cond. [m]</label><input id="pbTotal" type="number" step="0.01" placeholder="Min 50" oninput="saveData()"></div>
         <div class="form-group"><label for="manifold">Hoogte manifold (8.24) [m]</label><input id="manifold" type="number" step="0.01" placeholder="Max 16.4" oninput="saveData()"></div>
       </div>
       <div class="row-flex">
@@ -253,7 +251,7 @@
 
     const section134Match = cleanText.match(/1\.34(.*?)(?:1\.35|Tonnages)/i);
     if (section134Match) {
-        const sectionText = section134Match[1]; const numbers = sectionText.match(/(\d+\.\d+)/g);
+        const numbers = section134Match[1].match(/(\d+\.\d+)/g);
         if (numbers && numbers.length >= 9) {
             document.getElementById('fwd').value = parseFloat(numbers[1]); document.getElementById('aft').value = parseFloat(numbers[4]); document.getElementById('pbTotal').value = parseFloat(numbers[7]); 
         } else {
@@ -477,13 +475,28 @@
   }
 
   function checkAfmeren() {
-    const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0; const pb = parseFloat(document.getElementById('pbTotal').value) || 0; const loa = parseFloat(document.getElementById('loa').value) || 0; const deadweight = parseFloat(document.getElementById('deadweight').value) || 0; const selected = document.querySelector('input[name="selectedArm"]:checked');
+    const fwd = parseFloat(document.getElementById('fwd').value) || 0; 
+    const aft = parseFloat(document.getElementById('aft').value) || 0; 
+    const pb = parseFloat(document.getElementById('pbTotal').value) || 0; 
+    const loa = parseFloat(document.getElementById('loa').value) || 0; 
+    const deadweight = parseFloat(document.getElementById('deadweight').value) || 0;
+    // LET OP: freeboard en manifold worden hieronder ook opgehaald
+    const freeboard = parseFloat(document.getElementById('freeboard').value) || 0;
+    const manifold = parseFloat(document.getElementById('manifold').value) || 0;
+    const selected = document.querySelector('input[name="selectedArm"]:checked');
 
     if (fwd === 0 || aft === 0) { alert("Vul eerst scheepsgegevens in."); return; }
 
     let html = '<div class="section-title">Controles & Limieten</div><div class="result-grid">';
     html += (pb >= 50) ? `<div class="result-item result-ok">✓ PB (${pb}m)</div>` : `<div class="result-item result-error">✕ PB < 50m</div>`;
     html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA Fout</div>`;
+    
+    // Herstelde checks (Geometry, FB, Manifold) met correcte tekst
+    const sumDiff = Math.abs((fwd + aft) - pb); 
+    html += (sumDiff <= 1) ? `<div class="result-item result-ok">✓ Verschil tussen AFT+FWD=PB</div>` : `<div class="result-item result-error">✕ Verschil tussen AFT+FWD=PB</div>`;
+    
+    html += (freeboard <= 14.4) ? `<div class="result-item result-ok">✓ FB (${freeboard}m)</div>` : `<div class="result-item result-error">✕ FB > 14.4m</div>`;
+    html += (manifold <= 16.4) ? `<div class="result-item result-ok">✓ Manifold</div>` : `<div class="result-item result-error">✕ Manifold > 16.4m</div>`;
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
     html += '</div>';
 
@@ -496,13 +509,12 @@
     resDiv.innerHTML = html; 
     resDiv.classList.add('visible');
 
-    // ALLEEN ALS er een arm geselecteerd is, tekenen we de plot
+    // Alleen tekenen als arm geselecteerd is
     if(selected) {
         localStorage.setItem('shipfit_selected_arm', selected.value);
         const armId = selected.value; const offset = armPositions[armId];
         drawDualPlots(fwd, aft, offset, armId);
     } else {
-        // Anders verbergen we de plot container, zodat men alleen tekst ziet
         document.getElementById('plot-container').style.display = 'none';
     }
   }
@@ -515,8 +527,6 @@
       if (selected) {
           // Als arm geselecteerd: Report + Plots
           document.body.setAttribute('data-print-mode', 'report'); // Uses the full layout defined in CSS
-          // Maar wacht, CSS is nu aangepast voor Pagina 1 (data) + Pagina 2/3 (plots)
-          // als er een arm is geselecteerd, worden plots getekend en zijn ze zichtbaar in de DOM
       } else {
           // Geen arm: Alleen Pagina 1 (data), plots zijn verborgen via JS
           document.body.setAttribute('data-print-mode', 'simple'); 
@@ -527,14 +537,10 @@
   }
 
   function maakMeerplan() {
-    // Hier is de selectie WEL verplicht omdat je een plot moet maken
     const selected = document.querySelector('input[name="selectedArm"]:checked');
     if (!selected) { alert("Selecteer eerst een laadarm."); return; }
     
-    // Voer de check uit (en teken de plot)
     checkAfmeren();
-    
-    // Scroll naar de plot
     document.getElementById('plot-container').scrollIntoView({behavior: 'smooth'});
   }
 </script>
