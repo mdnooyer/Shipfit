@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.12 - PDF Upload Fixed</title>
+  <title>ShipFit 7.14 - Vlissingen/Antwerpen Labels</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -46,8 +46,9 @@
     #resultaten { margin-top: 30px; display: none; }
     #resultaten.visible { display: block; }
     .section-title { font-size: 1.1rem; color: var(--primary); margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 25px; font-weight: bold; }
+    
     .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .result-item { padding: 12px; border-radius: 6px; font-size: 0.95rem; }
+    .result-item { padding: 12px; border-radius: 6px; font-size: 0.9rem; display: flex; align-items: center; } 
     .result-ok { background: var(--success-bg); border: 1px solid #a5d6a7; color: var(--success-text); }
     .result-error { background: var(--error-bg); border: 1px solid #ef9a9a; color: var(--error-text); }
     
@@ -77,7 +78,6 @@
     .plot-label { text-align: center; font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; color: #1565c0; text-transform: uppercase; letter-spacing: 1px; }
     canvas { display: block; margin: 0 auto; border-bottom: 1px solid #eee; }
 
-    /* PRINT STYLES */
     @media print {
       @page { margin: 1cm; size: A4 portrait; }
       body { background: white; font-family: Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -87,17 +87,14 @@
       body[data-print-mode="report"] .container { width: 100%; max-width: 100%; margin: 0; padding: 0; box-shadow: none; }
       body[data-print-mode="report"] .form-group input { border: none; padding: 0; font-weight: bold; background: transparent; }
       
-      /* Pagina 1: Data + Resultaten */
       body[data-print-mode="report"] #resultaten { display: block !important; page-break-after: always; }
       
-      /* Pagina 2/3: Plots */
       body[data-print-mode="report"] #plot-container { display: block !important; border: none; padding: 0; margin: 0; width: 100%; }
       body[data-print-mode="report"] .plot-wrapper { page-break-after: always; padding-top: 50px; }
       body[data-print-mode="report"] .plot-wrapper:last-child { page-break-after: auto; }
       body[data-print-mode="report"] canvas { width: 100% !important; height: auto !important; }
       body[data-print-mode="report"] .plot-label { font-size: 1.5rem; color: #000; margin-bottom: 10px; text-align: center; }
       
-      /* Simple mode (geen laadarm) */
       body[data-print-mode="simple"] #plot-container { display: none !important; }
     }
   </style>
@@ -106,7 +103,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 7.12</h1>
+    <h1>ShipFit 7.14</h1>
   </header>
 
   <div class="container">
@@ -169,12 +166,12 @@
     <div id="plot-container" style="display:none;">
       
       <div id="sb-page" class="plot-wrapper">
-        <div class="plot-label">Stuurboord (SB) Aanmeren (Boeg Links)</div>
+        <div class="plot-label">Stuurboord (SB) Aanmeren</div>
         <canvas id="canvasSB" width="950" height="350"></canvas>
       </div>
 
       <div id="ps-page" class="plot-wrapper">
-        <div class="plot-label">Bakboord (PS) Aanmeren (Boeg Rechts)</div>
+        <div class="plot-label">Bakboord (PS) Aanmeren</div>
         <canvas id="canvasPS" width="950" height="350"></canvas>
       </div>
 
@@ -183,7 +180,6 @@
   </div>
 
 <script>
-  // Zorg dat de worker correct is ingesteld
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
   const armPositions = { '4': 4.15, '5': 6.74, '7': 12.38, '8': 14.97 };
@@ -202,6 +198,7 @@
     document.getElementById('resultaten').innerHTML = '';
     document.getElementById('resultaten').classList.remove('visible');
     document.getElementById('plot-container').style.display = 'none';
+    document.getElementById('btn-meerplan-pdf').style.display = 'none';
   }
 
   function showMeerplanBtn() {
@@ -225,13 +222,7 @@
       }
       parseQ88Text(fullText);
       alert('Q88 Data succesvol ingeladen.');
-    } catch (error) { 
-        console.error(error); 
-        alert('Fout bij lezen PDF: ' + error.message); 
-    } finally { 
-        document.getElementById('loading').style.display = 'none'; 
-        input.value = ''; 
-    }
+    } catch (error) { console.error(error); alert('Fout bij lezen PDF.'); } finally { document.getElementById('loading').style.display = 'none'; input.value = ''; }
   }
 
   function parseQ88Text(text) {
@@ -348,12 +339,27 @@
     ctx.fillStyle = '#000'; 
     ctx.fillRect(midX - 6, yPlatformFront - 6, 12, 12); 
     ctx.textAlign = 'right'; ctx.font = 'bold 12px Arial'; 
-    ctx.fillText("C5", midX - 8, yPlatformFront - 8);
+    ctx.fillText("C5", midX - 8, yPlatformFront - 8); 
 
     const arms=[{id:'4',x:armPositions['4'],color:'#d32f2f'},{id:'5',x:armPositions['5'],color:'#c62828'},{id:'7',x:armPositions['7'],color:'#b71c1c'},{id:'8',x:armPositions['8'],color:'#8e0000'}];
     ctx.font='bold 10px Arial'; ctx.textAlign='center'; 
     arms.forEach(arm=>{ let ax=midX+(arm.x*scale); if(arm.id === selectedArmId) { ctx.fillStyle = '#00c853'; } else { ctx.fillStyle = arm.color; } ctx.fillRect(ax-2,yPlatformFront-15,4,15); ctx.fillStyle='#000'; ctx.fillText(arm.id,ax,yPlatformFront-20); });
     
+    // Vlissingen / Antwerpen Labels (AANGEPAST)
+    const yDirLabel = yBerthing - 15;
+    const xVlissingen = midX + (-173.9 * scale);
+    const xAntwerpen = midX + (173.4 * scale);
+    
+    ctx.fillStyle = '#2e7d32'; // Groen
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    
+    // Links: Pijltje voor de V
+    ctx.fillText("← Vlissingen", xVlissingen, yDirLabel);
+    
+    // Rechts: Pijltje na de n
+    ctx.fillText("Antwerpen →", xAntwerpen, yDirLabel);
+
     const drawPoint = (p) => {
         const px = midX + (p.x * scale); const py = p.y; ctx.beginPath();
         if(p.type === 'MD') {
@@ -427,7 +433,11 @@
     let html = '<div class="section-title">Controles & Limieten</div><div class="result-grid">';
     html += (pb >= 50) ? `<div class="result-item result-ok">✓ PB (${pb}m)</div>` : `<div class="result-item result-error">✕ PB < 50m</div>`;
     html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA Fout</div>`;
-    const sumDiff = Math.abs((fwd + aft) - pb); html += (sumDiff <= 1) ? `<div class="result-item result-ok">✓ Verschil AFT+FWD=PB</div>` : `<div class="result-item result-error">✕ Verschil AFT+FWD=PB</div>`;
+    const sumDiff = Math.abs((fwd + aft) - pb); 
+    html += (sumDiff <= 1) 
+        ? `<div class="result-item result-ok">✓ Verschil tussen AFT+FWD=tot. parallel body</div>` 
+        : `<div class="result-item result-error">✕ Verschil tussen AFT+FWD=tot. parallel body</div>`;
+        
     html += (freeboard <= 14.4) ? `<div class="result-item result-ok">✓ FB (${freeboard}m)</div>` : `<div class="result-item result-error">✕ FB te hoog</div>`;
     html += (manifold <= 16.4) ? `<div class="result-item result-ok">✓ Manifold</div>` : `<div class="result-item result-error">✕ Manifold</div>`;
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
@@ -460,13 +470,14 @@
     reqTugs.forEach(t => { html += `<div class="tug-item">${getTugSVG(t)}<div class="tug-caption">BP</div></div>`; });
     html += '</div></div>';
 
+    // AANGEPAST: Tekst naar Voorschip FWD
     html += '<div class="section-title">Meerpatroon (Mooring Pattern)</div>'; 
     if(deadweight > 0) { 
         let l, b, s; 
         if(deadweight < 20000) { l = 2; b = 2; s = 2; } 
         else if(deadweight <= 40000) { l = 2; b = 3; s = 2; } 
         else { l = 3; b = 3; s = 2; } 
-        html += `<div class="arm-row"><div class="arm-block mooring-box"><div class="mooring-header">Voorschip (Fore)</div><div class="mooring-details"><div class="mooring-line"><span>Headlines:</span> <strong>${l}</strong></div><div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div><div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div></div></div><div class="arm-block mooring-box"><div class="mooring-header">Achterschip (Aft)</div><div class="mooring-details"><div class="mooring-line"><span>Sternlines:</span> <strong>${l}</strong></div><div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div><div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div></div></div></div><div style="text-align:center; font-size:0.8rem; margin-top:5px; color:#666;">Configuratie: ${l} + ${b} + ${s} (Fore & Aft)</div>`; 
+        html += `<div class="arm-row"><div class="arm-block mooring-box"><div class="mooring-header">Voorschip FWD</div><div class="mooring-details"><div class="mooring-line"><span>Headlines:</span> <strong>${l}</strong></div><div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div><div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div></div></div><div class="arm-block mooring-box"><div class="mooring-header">Achterschip (Aft)</div><div class="mooring-details"><div class="mooring-line"><span>Sternlines:</span> <strong>${l}</strong></div><div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div><div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div></div></div></div><div style="text-align:center; font-size:0.8rem; margin-top:5px; color:#666;">Configuratie: ${l} + ${b} + ${s} (Fore & Aft)</div>`; 
     }
 
     const resDiv = document.getElementById('resultaten'); 
