@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.13 - Clean Titles</title>
+  <title>ShipFit 7.11 - Offset FWD Feature</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -27,7 +27,7 @@
     .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: #555; }
     .form-group input { padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; }
     
-    .arm-selection-group { background: #fafafa; border: 1px solid #eee; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+    .arm-selection-group { background: #fafafa; border: 1px solid #eee; padding: 15px; border-radius: 6px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
     .radio-options { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; margin-top: 5px; }
     .radio-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; }
     .radio-label input { width: 20px; height: 20px; cursor: pointer; }
@@ -101,6 +101,7 @@
       body[data-print-mode="report"] #plot-container { display: block !important; }
       body[data-print-mode="report"] .plot-wrapper { page-break-after: always; }
       body[data-print-mode="report"] .plot-wrapper:last-child { page-break-after: auto; }
+      
       body[data-print-mode="simple"] #plot-container { display: none !important; }
     }
   </style>
@@ -109,7 +110,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 7.13</h1>
+    <h1>ShipFit 7.11</h1>
   </header>
 
   <div class="container">
@@ -130,7 +131,7 @@
       <hr>
       <div class="row-flex">
         <div class="form-group"><label for="loa">Length overall (1.27) [m]</label><input id="loa" type="number" step="0.01" placeholder="100-280" oninput="saveData()"></div>
-        <div class="form-group"><label for="pbTotal">tot. parallel body (1.34) Ballast cond. [m]</label><input id="pbTotal" type="number" step="0.01" placeholder="Min 50" oninput="saveData()"></div>
+        <div class="form-group"><label for="pbTotal">tot. parallel body (1.34) Ballast cond. [m]</label><input id="pbTotal" type="number" step="0.01" placeholder="Min 50" readonly style="color:#666;"></div>
         <div class="form-group"><label for="manifold">Hoogte manifold (8.24) [m]</label><input id="manifold" type="number" step="0.01" placeholder="Max 16.4" oninput="saveData()"></div>
       </div>
       <div class="row-flex">
@@ -150,12 +151,18 @@
       </div>
 
       <div class="arm-selection-group">
-        <label>Selecteer Laadarm voor Meerplan:</label>
-        <div class="radio-options">
-            <label class="radio-label"><input type="radio" name="selectedArm" value="4"> Arm 4</label>
-            <label class="radio-label"><input type="radio" name="selectedArm" value="5"> Arm 5</label>
-            <label class="radio-label"><input type="radio" name="selectedArm" value="7"> Arm 7</label>
-            <label class="radio-label"><input type="radio" name="selectedArm" value="8"> Arm 8</label>
+        <div>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">Selecteer Laadarm voor Meerplan:</label>
+            <div class="radio-options">
+                <label class="radio-label"><input type="radio" name="selectedArm" value="4" onchange="triggerUpdate()"> Arm 4</label>
+                <label class="radio-label"><input type="radio" name="selectedArm" value="5" onchange="triggerUpdate()"> Arm 5</label>
+                <label class="radio-label"><input type="radio" name="selectedArm" value="7" onchange="triggerUpdate()"> Arm 7</label>
+                <label class="radio-label"><input type="radio" name="selectedArm" value="8" onchange="triggerUpdate()"> Arm 8</label>
+            </div>
+        </div>
+        <div style="display: flex; flex-direction: column;">
+            <label for="manualOffset" style="margin-bottom: 5px; font-weight: 600; color: #555;">Offset FWD [m]:</label>
+            <input id="manualOffset" type="number" step="0.1" placeholder="0" oninput="saveData(); triggerUpdate();" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; width: 100px; text-align: center;">
         </div>
       </div>
 
@@ -172,12 +179,12 @@
     <div id="plot-container" style="display:none;">
       
       <div class="plot-wrapper">
-        <div class="plot-label">Stuurboord (SB) Berthing</div>
+        <div class="plot-label">Stuurboord (SB) Aanmeren (Boeg Links)</div>
         <canvas id="canvasSB" width="950" height="350"></canvas>
       </div>
 
       <div class="plot-wrapper">
-        <div class="plot-label">Bakboord (PS) Berthing</div>
+        <div class="plot-label">Bakboord (PS) Aanmeren (Boeg Rechts)</div>
         <canvas id="canvasPS" width="950" height="350"></canvas>
       </div>
 
@@ -204,6 +211,13 @@
     document.getElementById('resultaten').innerHTML = '';
     document.getElementById('resultaten').classList.remove('visible');
     document.getElementById('plot-container').style.display = 'none';
+  }
+
+  // NIEUW: Functie om direct updates door te voeren bij wijziging van arm of offset
+  function triggerUpdate() {
+      if (document.getElementById('resultaten').classList.contains('visible')) {
+          checkAfmeren();
+      }
   }
 
   async function handleFileUpload(input) {
@@ -251,7 +265,7 @@
 
     const section134Match = cleanText.match(/1\.34(.*?)(?:1\.35|Tonnages)/i);
     if (section134Match) {
-        const numbers = section134Match[1].match(/(\d+\.\d+)/g);
+        const sectionText = section134Match[1]; const numbers = sectionText.match(/(\d+\.\d+)/g);
         if (numbers && numbers.length >= 9) {
             document.getElementById('fwd').value = parseFloat(numbers[1]); document.getElementById('aft').value = parseFloat(numbers[4]); document.getElementById('pbTotal').value = parseFloat(numbers[7]); 
         } else {
@@ -279,23 +293,20 @@
   function saveData() { const inputs = document.querySelectorAll('input'); const data = {}; inputs.forEach(input => data[input.id] = input.value); localStorage.setItem('shipfit_data', JSON.stringify(data)); }
   function loadData() { const data = JSON.parse(localStorage.getItem('shipfit_data')); if (data) { for (const [key, value] of Object.entries(data)) { const el = document.getElementById(key); if (el) el.value = value; if(key === 'selectedArm' && value) { const radio = document.querySelector(`input[name="selectedArm"][value="${value}"]`); if(radio) radio.checked = true; } } } }
   function resetForm() { if(confirm("Weet je zeker dat je alles wilt wissen?")) { clearFieldsSilent(); } }
-  function getTugSVG(tonnage) { return `<svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg"><path d="M5,55 Q25,60 50,55 T95,55" stroke="#90caf9" stroke-width="2" fill="none" opacity="0.6"/><path d="M10,40 Q5,55 25,55 L85,55 Q95,45 90,35 L10,35 Z" fill="#37474f"/><path d="M25,35 L25,15 L65,15 L65,35 Z" fill="#546e7a"/><rect x="30" y="18" width="15" height="8" fill="#b3e5fc"/><rect x="50" y="10" width="10" height="25" fill="#263238"/><text x="50" y="50" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="14" fill="#ffffff">${tonnage}t</text></svg>`; }
-
-  // --- DRAWING ENGINE (UPDATED V7.0 - MD4 POSITION CORRECTED) ---
+  
+  // --- DRAWING ENGINE ---
   function drawJettyScene(ctx, fwd, aft, side, manifoldOffset, selectedArmId) {
     const width = ctx.canvas.width; const height = ctx.canvas.height;
     ctx.clearRect(0, 0, width, height);
     const midX = width / 2; const scale = 2.4; 
     
-    // Verticale posities volgens tekening
-    const yBerthing = 200; // Onderin (Front)
+    const yBerthing = 200; 
     const yPlatformFront = 200; 
-    const yPlatformBack = 140; // C5 diepte
-    const yMD_Mid = 160;   // MD5, 6, 7, 8
-    const yMD_Back = 120;  // MD1, 2, 3
-    const yMD4_Pos = 140;  // MD4 lower than MD3 (120) but higher than MD_Mid (160)
+    const yPlatformBack = 140; 
+    const yMD_Mid = 160; 
+    const yMD_Back = 120; 
+    const yMD4_Pos = 140;
 
-    // Punten definities (X volgens data, Y volgens laag)
     const pts = {
         MD1: {x: -173.9, y: yMD_Back, type: 'MD'},
         MD2: {x: -104.4, y: yMD_Back, type: 'MD'},
@@ -303,78 +314,48 @@
         BD1: {x: -57.2,  y: yBerthing, type: 'BD'},
         MD6: {x: -37.0,  y: yMD_Mid, type: 'MD'},
         BD2: {x: -25.2,  y: yBerthing, type: 'BD'},
-        C5L: {x: -20.0,  y: yPlatformFront, type: 'PT'}, // Platform Links Front
-        C5R: {x: 20.0,   y: yPlatformFront, type: 'PT'}, // Platform Rechts Front
+        C5L: {x: -20.0,  y: yPlatformFront, type: 'PT'},
+        C5R: {x: 20.0,   y: yPlatformFront, type: 'PT'},
         BD3: {x: 24.9,   y: yBerthing, type: 'BD'},
         MD7: {x: 37.0,   y: yMD_Mid, type: 'MD'},
         BD4: {x: 53.5,   y: yBerthing, type: 'BD'},
         MD8: {x: 79.0,   y: yMD_Mid, type: 'MD'},
         MD3: {x: 105.1,  y: yMD_Back, type: 'MD'},
-        MD4: {x: 173.4,  y: yMD4_Pos, type: 'MD'} // AANGEPAST: MD4 Lager
+        MD4: {x: 173.4,  y: yMD4_Pos, type: 'MD'}
     };
 
-    // Helper voor dubbele lijnen
     function drawDoubleLine(p1, p2) {
         const x1 = midX + (p1.x * scale); const y1 = p1.y;
         const x2 = midX + (p2.x * scale); const y2 = p2.y;
-        
-        // Bereken offset vector (loodrecht)
         const dx = x2 - x1; const dy = y2 - y1;
         const len = Math.sqrt(dx*dx + dy*dy);
         if(len === 0) return;
-        const offX = (-dy / len) * 2; // 2px breedte
+        const offX = (-dy / len) * 2; 
         const offY = (dx / len) * 2;
-
         ctx.beginPath(); ctx.strokeStyle = '#555'; ctx.lineWidth = 1;
-        // Lijn 1
         ctx.moveTo(x1 + offX, y1 + offY); ctx.lineTo(x2 + offX, y2 + offY);
-        // Lijn 2
         ctx.moveTo(x1 - offX, y1 - offY); ctx.lineTo(x2 - offX, y2 - offY);
         ctx.stroke();
     }
 
-    // Teken paden (ZigZag)
-    drawDoubleLine(pts.MD1, pts.MD2);
-    drawDoubleLine(pts.MD2, pts.MD5);
-    drawDoubleLine(pts.MD5, pts.BD1);
-    drawDoubleLine(pts.BD1, pts.MD6);
-    drawDoubleLine(pts.MD6, pts.BD2);
-    drawDoubleLine(pts.BD2, pts.C5L);
-    
-    drawDoubleLine(pts.C5R, pts.BD3);
-    drawDoubleLine(pts.BD3, pts.MD7);
-    drawDoubleLine(pts.MD7, pts.BD4);
-    drawDoubleLine(pts.BD4, pts.MD8);
-    drawDoubleLine(pts.MD8, pts.MD3);
-    drawDoubleLine(pts.MD3, pts.MD4); // Nu loopt deze schuin naar beneden
+    drawDoubleLine(pts.MD1, pts.MD2); drawDoubleLine(pts.MD2, pts.MD5); drawDoubleLine(pts.MD5, pts.BD1);
+    drawDoubleLine(pts.BD1, pts.MD6); drawDoubleLine(pts.MD6, pts.BD2); drawDoubleLine(pts.BD2, pts.C5L);
+    drawDoubleLine(pts.C5R, pts.BD3); drawDoubleLine(pts.BD3, pts.MD7); drawDoubleLine(pts.MD7, pts.BD4);
+    drawDoubleLine(pts.BD4, pts.MD8); drawDoubleLine(pts.MD8, pts.MD3); drawDoubleLine(pts.MD3, pts.MD4); 
 
-    // Platform C5
     ctx.fillStyle='#ccc'; ctx.strokeStyle='#444'; ctx.lineWidth=2;
     ctx.fillRect(midX-(20*scale), yPlatformBack, 40*scale, (yPlatformFront-yPlatformBack)); 
     ctx.strokeRect(midX-(20*scale), yPlatformBack, 40*scale, (yPlatformFront-yPlatformBack));
     
-    // C5 Label & Blokje
     ctx.fillStyle = '#000'; 
     ctx.fillRect(midX - 6, yPlatformFront - 6, 12, 12); 
     ctx.textAlign = 'right'; ctx.font = 'bold 12px Arial'; 
-    ctx.fillText("C5", midX - 8, yPlatformFront - 8); // Linksboven
+    ctx.fillText("C5", midX - 8, yPlatformFront - 8);
 
-    // Armen
     const arms=[{id:'4',x:armPositions['4'],color:'#d32f2f'},{id:'5',x:armPositions['5'],color:'#c62828'},{id:'7',x:armPositions['7'],color:'#b71c1c'},{id:'8',x:armPositions['8'],color:'#8e0000'}];
     ctx.font='bold 10px Arial'; ctx.textAlign='center'; 
     arms.forEach(arm=>{ let ax=midX+(arm.x*scale); if(arm.id === selectedArmId) { ctx.fillStyle = '#00c853'; } else { ctx.fillStyle = arm.color; } ctx.fillRect(ax-2,yPlatformFront-15,4,15); ctx.fillStyle='#000'; ctx.fillText(arm.id,ax,yPlatformFront-20); });
     
-    // NIEUW: VLISSINGEN / ANTWERPEN LABELS
-    const yDirLabel = yBerthing - 15;
-    const xVlissingen = midX + (-173.9 * scale);
-    const xAntwerpen = midX + (173.4 * scale);
-    ctx.fillStyle = '#2e7d32'; // Groen
-    ctx.font = 'bold 12px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText("← Vlissingen", xVlissingen, yDirLabel);
-    ctx.fillText("Antwerpen →", xAntwerpen, yDirLabel);
-
-    // Dolphins (Tekenen over de lijnen heen)
     const drawPoint = (p) => {
         const px = midX + (p.x * scale); const py = p.y; ctx.beginPath();
         if(p.type === 'MD') {
@@ -384,22 +365,14 @@
         } else if (p.type === 'BD') {
             ctx.rect(px-6,py-6,12,12); ctx.fillStyle='#2e7d32'; ctx.fill(); ctx.stroke(); 
             ctx.fillStyle='#000'; ctx.font='10px Arial'; 
-            if(p.x < 0) { ctx.textAlign='right'; ctx.fillText(p.id, px-10, py+4); } // BD1, BD2
-            else { ctx.textAlign='left'; ctx.fillText(p.id, px+10, py+4); } // BD3, BD4
+            if(p.x < 0) { ctx.textAlign='right'; ctx.fillText(p.id, px-10, py+4); } 
+            else { ctx.textAlign='left'; ctx.fillText(p.id, px+10, py+4); } 
             ctx.textAlign='center'; ctx.fillStyle='#666'; ctx.font='9px Arial'; ctx.fillText(Math.abs(p.x).toFixed(1)+"m",px,py+28); 
         }
     };
     
-    // Iterate object pts (excluding C5L/R helper points)
-    Object.keys(pts).forEach(key => {
-        if(key !== 'C5L' && key !== 'C5R') {
-            let p = pts[key]; p.id = key; // Ensure ID is set
-            drawPoint(p);
-        }
-    });
+    Object.keys(pts).forEach(key => { if(key !== 'C5L' && key !== 'C5R') { let p = pts[key]; p.id = key; drawPoint(p); }});
 
-    // --- BLUE DASHED LINE (BERTHING LINE) ---
-    // Tussen BD en Schip. BD is op 200. Schip top is op 210. Lijn op 205.
     ctx.beginPath();
     ctx.moveTo(midX + (-173.9 * scale), yBerthing + 5); 
     ctx.lineTo(midX + (173.4 * scale), yBerthing + 5);
@@ -407,15 +380,21 @@
     ctx.fillStyle = '#1565c0'; ctx.textAlign = 'left'; ctx.font = '10px Arial';
     ctx.fillText("Berthing line", midX + (-173.9 * scale), yBerthing + 2);
 
-    // --- SCHIP TEKENEN ---
-    const shipZeroX = midX + (manifoldOffset * scale);
+    // --- SCHIP TEKENEN MET OFFSET LOGICA ---
+    let userOff = parseFloat(document.getElementById('manualOffset').value) || 0;
+    // Een positieve offset verschuift het schip FWD. 
+    // SB: Boeg is links (negatieve X), dus -userOff
+    // PS: Boeg is rechts (positieve X), dus +userOff
+    let shiftX = (side === 'SB') ? -userOff : userOff;
+    
+    const shipZeroX = midX + (manifoldOffset * scale) + (shiftX * scale);
+    
     const beamVal = parseFloat(document.getElementById('beam').value) || 32; 
     const bowToCmVal = parseFloat(document.getElementById('bowToCm').value) || (fwd + 20);
     const sternToCmVal = parseFloat(document.getElementById('sternToCm').value) || (aft + 15);
     const bowSectionLen = Math.max(0, bowToCmVal - fwd);
     const sternSectionLen = Math.max(0, sternToCmVal - aft);
 
-    // Positie: Iets onder de BDs
     const shipTopY = yBerthing + 10; 
     const beamSc = beamVal * scale;
     const shipBotY = shipTopY + beamSc;
@@ -430,14 +409,14 @@
     if (side === 'SB') { 
         pbStartX = shipZeroX - (fwd * scale); pbEndX = shipZeroX + (aft * scale);
         bowTipX = pbStartX - (bowSectionLen * scale); sternTipX = pbEndX + (sternSectionLen * scale);
-        // Hek
+        
         ctx.fillStyle = grayStyle; ctx.beginPath(); ctx.moveTo(pbEndX, shipTopY);
         ctx.bezierCurveTo(sternTipX, shipTopY + (halfBeamSc*0.2), sternTipX, shipBotY - (halfBeamSc*0.2), pbEndX, shipBotY);
         ctx.lineTo(pbEndX, shipTopY); ctx.closePath(); ctx.fill(); ctx.stroke();
-        // PB
+        
         ctx.fillStyle = blueStyle; ctx.strokeStyle = borderStyle;
         ctx.fillRect(pbStartX, shipTopY, (fwd+aft)*scale, beamSc); ctx.strokeRect(pbStartX, shipTopY, (fwd+aft)*scale, beamSc);
-        // Boeg
+        
         ctx.fillStyle = grayStyle; ctx.beginPath(); ctx.moveTo(pbStartX, shipTopY);
         ctx.bezierCurveTo(bowTipX + (bowSectionLen*scale*0.5), shipTopY, bowTipX, shipCenterY - (halfBeamSc*0.3), bowTipX, shipCenterY);
         ctx.bezierCurveTo(bowTipX, shipCenterY + (halfBeamSc*0.3), bowTipX + (bowSectionLen*scale*0.5), shipBotY, pbStartX, shipBotY);
@@ -445,14 +424,14 @@
     } else { 
         pbStartX = shipZeroX - (aft * scale); pbEndX = shipZeroX + (fwd * scale);
         sternTipX = pbStartX - (sternSectionLen * scale); bowTipX = pbEndX + (bowSectionLen * scale);
-        // Hek
+        
         ctx.fillStyle = grayStyle; ctx.beginPath(); ctx.moveTo(pbStartX, shipTopY);
         ctx.bezierCurveTo(sternTipX, shipTopY + (halfBeamSc*0.2), sternTipX, shipBotY - (halfBeamSc*0.2), pbStartX, shipBotY);
         ctx.lineTo(pbStartX, shipTopY); ctx.closePath(); ctx.fill(); ctx.stroke();
-        // PB
+        
         ctx.fillStyle = blueStyle; ctx.strokeStyle = borderStyle;
         ctx.fillRect(pbStartX, shipTopY, (fwd+aft)*scale, beamSc); ctx.strokeRect(pbStartX, shipTopY, (fwd+aft)*scale, beamSc);
-        // Boeg
+        
         ctx.fillStyle = grayStyle; ctx.beginPath(); ctx.moveTo(pbEndX, shipTopY);
         ctx.bezierCurveTo(bowTipX - (bowSectionLen*scale*0.5), shipTopY, bowTipX, shipCenterY - (halfBeamSc*0.3), bowTipX, shipCenterY);
         ctx.bezierCurveTo(bowTipX, shipCenterY + (halfBeamSc*0.3), bowTipX - (bowSectionLen*scale*0.5), shipBotY, pbEndX, shipBotY);
@@ -484,31 +463,39 @@
     document.getElementById('plot-container').style.display = 'block';
   }
 
+  function getTugSVG(tonnage) { return `<svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg"><path d="M5,55 Q25,60 50,55 T95,55" stroke="#90caf9" stroke-width="2" fill="none" opacity="0.6"/><path d="M10,40 Q5,55 25,55 L85,55 Q95,45 90,35 L10,35 Z" fill="#37474f"/><path d="M25,35 L25,15 L65,15 L65,35 Z" fill="#546e7a"/><rect x="30" y="18" width="15" height="8" fill="#b3e5fc"/><rect x="50" y="10" width="10" height="25" fill="#263238"/><text x="50" y="50" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="14" fill="#ffffff">${tonnage}t</text></svg>`; }
+
   function checkAfmeren() {
-    const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0; const pb = parseFloat(document.getElementById('pbTotal').value) || 0; const loa = parseFloat(document.getElementById('loa').value) || 0; const deadweight = parseFloat(document.getElementById('deadweight').value) || 0; const freeboard = parseFloat(document.getElementById('freeboard').value) || 0; const manifold = parseFloat(document.getElementById('manifold').value) || 0;
-    const selected = document.querySelector('input[name="selectedArm"]:checked');
+    const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0; const pb = parseFloat(document.getElementById('pbTotal').value) || 0; const loa = parseFloat(document.getElementById('loa').value) || 0; const deadweight = parseFloat(document.getElementById('deadweight').value) || 0; const selected = document.querySelector('input[name="selectedArm"]:checked');
 
     if (fwd === 0 || aft === 0) { alert("Vul eerst scheepsgegevens in."); return; }
 
     let html = '<div class="section-title">Controles & Limieten</div><div class="result-grid">';
     html += (pb >= 50) ? `<div class="result-item result-ok">✓ PB (${pb}m)</div>` : `<div class="result-item result-error">✕ PB < 50m</div>`;
     html += (loa >= 100 && loa <= 280) ? `<div class="result-item result-ok">✓ LOA (${loa}m)</div>` : `<div class="result-item result-error">✕ LOA Fout</div>`;
-    const sumDiff = Math.abs((fwd + aft) - pb); html += (sumDiff <= 1) ? `<div class="result-item result-ok">✓ Verschil tussen AFT+FWD=PB</div>` : `<div class="result-item result-error">✕ Verschil tussen AFT+FWD=PB</div>`;
-    html += (freeboard <= 14.4) ? `<div class="result-item result-ok">✓ FB (${freeboard}m)</div>` : `<div class="result-item result-error">✕ FB > 14.4m</div>`;
-    html += (manifold <= 16.4) ? `<div class="result-item result-ok">✓ Manifold</div>` : `<div class="result-item result-error">✕ Manifold > 16.4m</div>`;
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
     html += '</div>';
 
     const armConfig = [{ name: 'Arm 4', reqFwd: 28.35, reqAft: 19.68 }, { name: 'Arm 5', reqFwd: 30.94, reqAft: 17.09 }, { name: 'Arm 7', reqFwd: 36.58, reqAft: 11.45 }, { name: 'Arm 8', reqFwd: 39.17, reqAft: 8.86 }];
+    
+    // AANGEPAST: Lees de offset uit en verreken dit met de vereiste ruimte.
+    let userOff = parseFloat(document.getElementById('manualOffset').value) || 0;
+
     const renderArms = (mooringSide) => { 
-        let output = `<div class="arm-container"><div class="arm-header">Berthing ${mooringSide}</div><div class="arm-row">`; 
+        let output = `<div class="arm-container"><div class="arm-header">Afmeren ${mooringSide}</div><div class="arm-row">`; 
         armConfig.forEach(arm => { 
-            let reqFwd, reqAft; 
-            if (mooringSide === 'Stuurboord (SB)') { reqFwd = arm.reqFwd; reqAft = arm.reqAft; } 
-            else { reqFwd = arm.reqAft; reqAft = arm.reqFwd; } 
+            let baseReqFwd, baseReqAft; 
+            if (mooringSide === 'Stuurboord (SB)') { baseReqFwd = arm.reqFwd; baseReqAft = arm.reqAft; } 
+            else { baseReqFwd = arm.reqAft; baseReqAft = arm.reqFwd; } 
             
-            if (fwd > reqFwd && aft > reqAft) { 
-                const moveFwd = (aft - reqAft).toFixed(1); const moveAft = (fwd - reqFwd).toFixed(1); 
+            // Een positieve offset verschuift het schip FWD, dus de afstand naar de voorste dolphin wordt kleiner
+            // en de benodigde afstand aan de achterkant wordt groter.
+            let effReqFwd = baseReqFwd - userOff;
+            let effReqAft = baseReqAft + userOff;
+
+            if (fwd > effReqFwd && aft > effReqAft) { 
+                const moveFwd = (aft - effReqAft).toFixed(1); 
+                const moveAft = (fwd - effReqFwd).toFixed(1); 
                 output += `<div class="arm-block result-ok"><div class="arm-title">${arm.name}</div><div class="offset-info"><div class="offset-line"><span>Fwd:</span><span class="offset-val">+${moveFwd}</span></div><div class="offset-line"><span>Aft:</span><span class="offset-val">+${moveAft}</span></div></div></div>`; 
             } else { 
                 output += `<div class="arm-block result-error"><div class="arm-title">${arm.name}</div><div>Past niet</div></div>`; 
@@ -526,16 +513,6 @@
     reqTugs.forEach(t => { html += `<div class="tug-item">${getTugSVG(t)}<div class="tug-caption">BP</div></div>`; });
     html += '</div></div>';
 
-    // AANGEPAST: Tekst "Voorschip FWD"
-    html += '<div class="section-title">Meerpatroon (Mooring Pattern)</div>'; 
-    if(deadweight > 0) { 
-        let l, b, s; 
-        if(deadweight < 20000) { l = 2; b = 2; s = 2; } 
-        else if(deadweight <= 40000) { l = 2; b = 3; s = 2; } 
-        else { l = 3; b = 3; s = 2; } 
-        html += `<div class="arm-row"><div class="arm-block mooring-box"><div class="mooring-header">Voorschip FWD</div><div class="mooring-details"><div class="mooring-line"><span>Headlines:</span> <strong>${l}</strong></div><div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div><div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div></div></div><div class="arm-block mooring-box"><div class="mooring-header">Achterschip (Aft)</div><div class="mooring-details"><div class="mooring-line"><span>Sternlines:</span> <strong>${l}</strong></div><div class="mooring-line"><span>Breast lines:</span> <strong>${b}</strong></div><div class="mooring-line"><span>Springs:</span> <strong>${s}</strong></div></div></div></div><div style="text-align:center; font-size:0.8rem; margin-top:5px; color:#666;">Configuratie: ${l} + ${b} + ${s} (Fore & Aft)</div>`; 
-    }
-
     const resDiv = document.getElementById('resultaten'); 
     resDiv.innerHTML = html; 
     resDiv.classList.add('visible');
@@ -551,11 +528,12 @@
 
   function printSmartPDF() {
       const selected = document.querySelector('input[name="selectedArm"]:checked');
-      // Update resultaten eerst
-      checkAfmeren();
-
       if (selected) {
-          document.body.setAttribute('data-print-mode', 'report'); 
+          const fwd = parseFloat(document.getElementById('fwd').value) || 0; 
+          const aft = parseFloat(document.getElementById('aft').value) || 0;
+          const armId = selected.value; const offset = armPositions[armId];
+          drawDualPlots(fwd, aft, offset, armId);
+          document.body.setAttribute('data-print-mode', 'full'); 
       } else {
           document.body.setAttribute('data-print-mode', 'simple'); 
       }
