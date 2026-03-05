@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.11 - Offset FWD Feature</title>
+  <title>ShipFit 7.12 - CM & Manifold Lines</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -110,7 +110,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 7.11</h1>
+    <h1>ShipFit 7.12</h1>
   </header>
 
   <div class="container">
@@ -213,7 +213,6 @@
     document.getElementById('plot-container').style.display = 'none';
   }
 
-  // NIEUW: Functie om direct updates door te voeren bij wijziging van arm of offset
   function triggerUpdate() {
       if (document.getElementById('resultaten').classList.contains('visible')) {
           checkAfmeren();
@@ -293,8 +292,9 @@
   function saveData() { const inputs = document.querySelectorAll('input'); const data = {}; inputs.forEach(input => data[input.id] = input.value); localStorage.setItem('shipfit_data', JSON.stringify(data)); }
   function loadData() { const data = JSON.parse(localStorage.getItem('shipfit_data')); if (data) { for (const [key, value] of Object.entries(data)) { const el = document.getElementById(key); if (el) el.value = value; if(key === 'selectedArm' && value) { const radio = document.querySelector(`input[name="selectedArm"][value="${value}"]`); if(radio) radio.checked = true; } } } }
   function resetForm() { if(confirm("Weet je zeker dat je alles wilt wissen?")) { clearFieldsSilent(); } }
-  
-  // --- DRAWING ENGINE ---
+  function getTugSVG(tonnage) { return `<svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg"><path d="M5,55 Q25,60 50,55 T95,55" stroke="#90caf9" stroke-width="2" fill="none" opacity="0.6"/><path d="M10,40 Q5,55 25,55 L85,55 Q95,45 90,35 L10,35 Z" fill="#37474f"/><path d="M25,35 L25,15 L65,15 L65,35 Z" fill="#546e7a"/><rect x="30" y="18" width="15" height="8" fill="#b3e5fc"/><rect x="50" y="10" width="10" height="25" fill="#263238"/><text x="50" y="50" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="14" fill="#ffffff">${tonnage}t</text></svg>`; }
+
+  // --- DRAWING ENGINE MET OFFSET LOGICA ---
   function drawJettyScene(ctx, fwd, aft, side, manifoldOffset, selectedArmId) {
     const width = ctx.canvas.width; const height = ctx.canvas.height;
     ctx.clearRect(0, 0, width, height);
@@ -304,7 +304,7 @@
     const yPlatformFront = 200; 
     const yPlatformBack = 140; 
     const yMD_Mid = 160; 
-    const yMD_Back = 120; 
+    const yMD_Back = 120;
     const yMD4_Pos = 140;
 
     const pts = {
@@ -371,7 +371,11 @@
         }
     };
     
-    Object.keys(pts).forEach(key => { if(key !== 'C5L' && key !== 'C5R') { let p = pts[key]; p.id = key; drawPoint(p); }});
+    Object.keys(pts).forEach(key => {
+        if(key !== 'C5L' && key !== 'C5R') {
+            let p = pts[key]; p.id = key; drawPoint(p);
+        }
+    });
 
     ctx.beginPath();
     ctx.moveTo(midX + (-173.9 * scale), yBerthing + 5); 
@@ -380,14 +384,12 @@
     ctx.fillStyle = '#1565c0'; ctx.textAlign = 'left'; ctx.font = '10px Arial';
     ctx.fillText("Berthing line", midX + (-173.9 * scale), yBerthing + 2);
 
-    // --- SCHIP TEKENEN MET OFFSET LOGICA ---
+    // --- SCHIP TEKENEN MET OFFSET ---
     let userOff = parseFloat(document.getElementById('manualOffset').value) || 0;
-    // Een positieve offset verschuift het schip FWD. 
-    // SB: Boeg is links (negatieve X), dus -userOff
-    // PS: Boeg is rechts (positieve X), dus +userOff
     let shiftX = (side === 'SB') ? -userOff : userOff;
     
-    const shipZeroX = midX + (manifoldOffset * scale) + (shiftX * scale);
+    const armX = midX + (manifoldOffset * scale); // Vaste positie van de gekozen laadarm (Rode lijn)
+    const shipZeroX = armX + (shiftX * scale);    // Positie van de Manifold op het schip (Groene lijn)
     
     const beamVal = parseFloat(document.getElementById('beam').value) || 32; 
     const bowToCmVal = parseFloat(document.getElementById('bowToCm').value) || (fwd + 20);
@@ -438,10 +440,17 @@
         ctx.closePath(); ctx.fill(); ctx.stroke();
     }
 
-    ctx.beginPath(); ctx.moveTo(shipZeroX, shipTopY); ctx.lineTo(shipZeroX, shipBotY);
+    // Rode Lijn: Vaste positie van de laadarm (CM Target)
+    ctx.beginPath(); ctx.moveTo(armX, shipTopY); ctx.lineTo(armX, shipBotY);
     ctx.strokeStyle = '#d32f2f'; ctx.setLineDash([5, 3]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = '#d32f2f'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'left'; 
-    ctx.fillText("CM", shipZeroX + 5, shipCenterY); 
+    ctx.fillText("CM", armX + 5, shipCenterY - 12); 
+
+    // Groene Lijn: Daadwerkelijke Manifold positie van het schip
+    ctx.beginPath(); ctx.moveTo(shipZeroX, shipTopY); ctx.lineTo(shipZeroX, shipBotY);
+    ctx.strokeStyle = '#00c853'; ctx.setLineDash([5, 3]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#00c853'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'left'; 
+    ctx.fillText("Manifold", shipZeroX + 5, shipCenterY + 12); 
 
     const pbLen = parseFloat(document.getElementById('pbTotal').value) || 0;
     if(pbLen > 0) {
@@ -463,8 +472,6 @@
     document.getElementById('plot-container').style.display = 'block';
   }
 
-  function getTugSVG(tonnage) { return `<svg class="tug-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg"><path d="M5,55 Q25,60 50,55 T95,55" stroke="#90caf9" stroke-width="2" fill="none" opacity="0.6"/><path d="M10,40 Q5,55 25,55 L85,55 Q95,45 90,35 L10,35 Z" fill="#37474f"/><path d="M25,35 L25,15 L65,15 L65,35 Z" fill="#546e7a"/><rect x="30" y="18" width="15" height="8" fill="#b3e5fc"/><rect x="50" y="10" width="10" height="25" fill="#263238"/><text x="50" y="50" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="14" fill="#ffffff">${tonnage}t</text></svg>`; }
-
   function checkAfmeren() {
     const fwd = parseFloat(document.getElementById('fwd').value) || 0; const aft = parseFloat(document.getElementById('aft').value) || 0; const pb = parseFloat(document.getElementById('pbTotal').value) || 0; const loa = parseFloat(document.getElementById('loa').value) || 0; const deadweight = parseFloat(document.getElementById('deadweight').value) || 0; const selected = document.querySelector('input[name="selectedArm"]:checked');
 
@@ -476,9 +483,8 @@
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
     html += '</div>';
 
+    // Verrekenen van de Offset FWD in de tekstvakjes
     const armConfig = [{ name: 'Arm 4', reqFwd: 28.35, reqAft: 19.68 }, { name: 'Arm 5', reqFwd: 30.94, reqAft: 17.09 }, { name: 'Arm 7', reqFwd: 36.58, reqAft: 11.45 }, { name: 'Arm 8', reqFwd: 39.17, reqAft: 8.86 }];
-    
-    // AANGEPAST: Lees de offset uit en verreken dit met de vereiste ruimte.
     let userOff = parseFloat(document.getElementById('manualOffset').value) || 0;
 
     const renderArms = (mooringSide) => { 
@@ -488,8 +494,6 @@
             if (mooringSide === 'Stuurboord (SB)') { baseReqFwd = arm.reqFwd; baseReqAft = arm.reqAft; } 
             else { baseReqFwd = arm.reqAft; baseReqAft = arm.reqFwd; } 
             
-            // Een positieve offset verschuift het schip FWD, dus de afstand naar de voorste dolphin wordt kleiner
-            // en de benodigde afstand aan de achterkant wordt groter.
             let effReqFwd = baseReqFwd - userOff;
             let effReqAft = baseReqAft + userOff;
 
