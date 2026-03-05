@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.20 - Guaranteed 1-Page Fit</title>
+  <title>ShipFit 7.21 - Fixed PB Line</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -77,7 +77,7 @@
     .print-rotate-container { width: 100%; }
     .mooring-form-print { display: none; } 
 
-    /* PRINT STYLES - STRIKT GEFORCEERDE HOOGTES */
+    /* PRINT STYLES */
     @media print {
       @page { margin: 0.5cm; size: A4 portrait; }
       html, body { width: 100%; height: 100%; margin: 0; padding: 0; background: white; font-size: 11px; }
@@ -103,7 +103,6 @@
       
       body[data-print-mode="report"] #plot-container { display: block !important; border: none; padding: 0; margin: 0; }
       
-      /* Veiligere hoogte zodat het zéker op A4 past (A4 is 29.7cm hoog) */
       body[data-print-mode="report"] .plot-wrapper { 
           page-break-after: always; 
           page-break-inside: avoid;
@@ -115,7 +114,6 @@
       }
       body[data-print-mode="report"] .plot-wrapper:last-child { page-break-after: auto; }
       
-      /* Het gedraaide blok in het midden */
       body[data-print-mode="report"] .print-rotate-container {
           position: absolute; 
           top: 50%; left: 50%;
@@ -129,13 +127,11 @@
           position: relative !important; text-align: center; font-size: 12px; color: #000; margin-bottom: 0px; font-weight: bold;
       }
 
-      /* Tekening kleiner gemaakt (20cm) zodat de hele container zéker niet te groot wordt */
       body[data-print-mode="report"] canvas { 
           position: relative !important; transform: none !important;
           width: 20cm !important; max-width: 100% !important; height: auto !important; border: none; object-fit: contain;
       }
 
-      /* Zeer strak gestijld formulier */
       .mooring-form-print { 
           display: flex; flex-direction: column; align-items: center; width: 100%; color: #000; font-family: Arial, sans-serif; box-sizing: border-box;
       }
@@ -161,7 +157,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 7.20</h1>
+    <h1>ShipFit 7.21</h1>
   </header>
 
   <div class="container">
@@ -509,9 +505,9 @@
     // --- SCHIP TEKENEN MET OFFSET ---
     let userOff = parseFloat(document.getElementById('manualOffset').value) || 0;
     
-    // Positieve offset = Manifold is FWD van CM.
     let shiftX = (side === 'SB') ? userOff : -userOff;
     
+    const steigerCmX = midX; 
     const armX = midX + (manifoldOffset * scale); // Groene lijn (vaste positie op laadarm)
     const shipZeroX = armX + (shiftX * scale);    // Rode lijn (CM van het schip)
     
@@ -564,24 +560,27 @@
         ctx.closePath(); ctx.fill(); ctx.stroke();
     }
 
-    // 1. Rode Lijn: CM (Vaste plek op het schip, verschuift met de boot mee als de offset verandert)
+    // 1. Rode Lijn: CM (Schip - Beweegt mee met offset)
     ctx.beginPath(); ctx.moveTo(shipZeroX, shipTopY); ctx.lineTo(shipZeroX, shipBotY);
     ctx.strokeStyle = '#d32f2f'; ctx.setLineDash([5, 3]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = '#d32f2f'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'left'; 
     ctx.fillText("CM", shipZeroX + 5, shipCenterY - 12); 
 
-    // 2. Groene Lijn: Manifold (De plek op het schip die aansluit op de laadarm. Blijft dus op de arm staan)
+    // 2. Groene Lijn: Manifold (Vaste positie op de arm)
     ctx.beginPath(); ctx.moveTo(armX, shipTopY); ctx.lineTo(armX, shipBotY);
     ctx.strokeStyle = '#00c853'; ctx.setLineDash([5, 3]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = '#00c853'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'left'; 
     ctx.fillText("Manifold", armX + 5, shipCenterY + 12); 
 
+    // De correcte PB-lijn logica uit v7.21
     const pbLen = parseFloat(document.getElementById('pbTotal').value) || 0;
     if(pbLen > 0) {
-        ctx.beginPath(); const pbStart = shipZeroX - (pbLen/2 * scale); const pbEnd = shipZeroX + (pbLen/2 * scale);
-        ctx.moveTo(pbStart, shipBotY + 15); ctx.lineTo(pbEnd, shipBotY + 15);
+        ctx.beginPath(); 
+        ctx.moveTo(pbStartX, shipBotY + 15); 
+        ctx.lineTo(pbEndX, shipBotY + 15);
         ctx.strokeStyle = '#e65100'; ctx.lineWidth = 4; ctx.stroke();
-        ctx.fillStyle = '#e65100'; ctx.textAlign = 'center'; ctx.fillText(`PB: ${pbLen}m`, shipZeroX, shipBotY + 28);
+        ctx.fillStyle = '#e65100'; ctx.textAlign = 'center'; 
+        ctx.fillText(`PB: ${pbLen}m`, (pbStartX + pbEndX) / 2, shipBotY + 28);
     }
 
     const rulerY = height - 40;
