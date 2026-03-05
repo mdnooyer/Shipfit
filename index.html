@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.15 - Offset Direction Fixed</title>
+  <title>ShipFit 7.15 - Vertical Print Layout</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -74,6 +74,7 @@
     .plot-label { text-align: center; font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; color: #1565c0; }
     canvas { display: block; margin: 0 auto; border-bottom: 1px solid #eee; }
 
+    /* PRINT STYLES - NU MET VERTICALE ROTATIE VOOR DE TEKENINGEN */
     @media print {
       @page { margin: 0.5cm; size: A4 portrait; }
       body { background: white; font-size: 11px; }
@@ -94,13 +95,45 @@
       .tug-svg { width: 50px; }
       .mooring-box { padding: 5px; border: 1px solid #ccc; }
       .tug-note { background: #fff8e1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      #plot-container { border: none; padding: 0; margin-top: 10px; page-break-inside: auto; }
-      .plot-wrapper { page-break-inside: avoid; margin-bottom: 20px; }
-      canvas { width: 100%; height: auto; }
       
-      body[data-print-mode="report"] #plot-container { display: block !important; }
-      body[data-print-mode="report"] .plot-wrapper { page-break-after: always; }
-      body[data-print-mode="report"] .plot-wrapper:last-child { page-break-after: auto; }
+      body[data-print-mode="report"] #plot-container { 
+          display: block !important; border: none; padding: 0; margin: 0; 
+      }
+      
+      /* De wrapper maakt de hele pagina hoog en blokkeert overflows */
+      body[data-print-mode="report"] .plot-wrapper { 
+          page-break-after: always; 
+          position: relative; 
+          height: 26cm; 
+          margin: 0; 
+          padding-top: 10px;
+      }
+      body[data-print-mode="report"] .plot-wrapper:last-child { 
+          page-break-after: auto; 
+      }
+      
+      /* Het label staat bovenaan de pagina in portrait mode */
+      body[data-print-mode="report"] .plot-label {
+          font-size: 1.2rem;
+          text-align: center;
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          z-index: 10;
+      }
+
+      /* Het canvas wordt absoluut in het midden gezet, daarna 90 graden gedraaid en opgerekt */
+      body[data-print-mode="report"] canvas { 
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) rotate(90deg);
+          width: 23cm !important; /* Wordt de visuele hoogte na rotatie */
+          max-width: none !important;
+          height: auto !important;
+          border: none;
+      }
       
       body[data-print-mode="simple"] #plot-container { display: none !important; }
     }
@@ -264,7 +297,7 @@
 
     const section134Match = cleanText.match(/1\.34(.*?)(?:1\.35|Tonnages)/i);
     if (section134Match) {
-        const numbers = section134Match[1].match(/(\d+\.\d+)/g);
+        const sectionText = section134Match[1]; const numbers = sectionText.match(/(\d+\.\d+)/g);
         if (numbers && numbers.length >= 9) {
             document.getElementById('fwd').value = parseFloat(numbers[1]); document.getElementById('aft').value = parseFloat(numbers[4]); document.getElementById('pbTotal').value = parseFloat(numbers[7]); 
         } else {
@@ -299,7 +332,6 @@
     ctx.clearRect(0, 0, width, height);
     const midX = width / 2; const scale = 2.4; 
     
-    // Verticale posities
     const yBerthing = 200; 
     const yPlatformFront = 200; 
     const yPlatformBack = 140; 
@@ -392,15 +424,16 @@
 
     // --- SCHIP TEKENEN MET OFFSET ---
     let userOff = parseFloat(document.getElementById('manualOffset').value) || 0;
-    
-    // OMDRAAIEN VAN RICHTING (Oplossing!):
-    // Positieve offset = Manifold is FWD van CM.
-    // SB (boeg = links/-X)  -> FWD is links. CM ligt dus rechts van Manifold (+X)
-    // PS (boeg = rechts/+X) -> FWD is rechts. CM ligt dus links van Manifold (-X)
     let shiftX = (side === 'SB') ? userOff : -userOff;
     
-    const armX = midX + (manifoldOffset * scale); // Vaste positie laadarm (Groene Lijn)
-    const shipZeroX = armX + (shiftX * scale);    // Positie van de CM (Rode Lijn)
+    // Rode Lijn: Steiger CM. Staat ALTIJD onveranderd op het nulpunt (midX).
+    const steigerCmX = midX;
+    
+    // Groene Lijn: Manifold op de laadarm. Staat ALTIJD vast op de gekozen arm.
+    const armX = midX + (manifoldOffset * scale); 
+    
+    // De positie van de CM van het schip (Rode lijn) verschuift ten opzichte van de laadarm op basis van offset
+    const shipZeroX = armX + (shiftX * scale);    
     
     const beamVal = parseFloat(document.getElementById('beam').value) || 32; 
     const bowToCmVal = parseFloat(document.getElementById('bowToCm').value) || (fwd + 20);
@@ -451,13 +484,19 @@
         ctx.closePath(); ctx.fill(); ctx.stroke();
     }
 
-    // 1. Rode Lijn: CM (Vaste plek op het schip, verschuift met de boot mee)
+    // 1. Vaste Rode Lijn: Steiger CM (Staat altijd vast in het midden van de steiger)
+    ctx.beginPath(); ctx.moveTo(steigerCmX, shipTopY); ctx.lineTo(steigerCmX, shipBotY);
+    ctx.strokeStyle = '#d32f2f'; ctx.setLineDash([5, 3]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#d32f2f'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'left'; 
+    ctx.fillText("Steiger CM", steigerCmX + 5, shipCenterY - 12); 
+
+    // 2. Rode Lijn op het schip: CM (Beweegt mee met de boot)
     ctx.beginPath(); ctx.moveTo(shipZeroX, shipTopY); ctx.lineTo(shipZeroX, shipBotY);
     ctx.strokeStyle = '#d32f2f'; ctx.setLineDash([5, 3]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = '#d32f2f'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'left'; 
-    ctx.fillText("CM", shipZeroX + 5, shipCenterY - 12); 
+    ctx.fillText("CM", shipZeroX + 5, shipCenterY - 24); 
 
-    // 2. Groene Lijn: Manifold (Ligt ALTIJD op de gekozen laadarm)
+    // 3. Groene Lijn: Manifold (De plek op het schip die aansluit op de laadarm. Blijft dus op de arm staan)
     ctx.beginPath(); ctx.moveTo(armX, shipTopY); ctx.lineTo(armX, shipBotY);
     ctx.strokeStyle = '#00c853'; ctx.setLineDash([5, 3]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = '#00c853'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'left'; 
@@ -499,7 +538,6 @@
     html += (deadweight <= 130000) ? `<div class="result-item result-ok">✓ DWT</div>` : `<div class="result-item result-error">✕ DWT > 130kt</div>`;
     html += '</div>';
 
-    // AANGEPAST: Omgedraaide verwerking offset
     const armConfig = [{ name: 'Arm 4', reqFwd: 28.35, reqAft: 19.68 }, { name: 'Arm 5', reqFwd: 30.94, reqAft: 17.09 }, { name: 'Arm 7', reqFwd: 36.58, reqAft: 11.45 }, { name: 'Arm 8', reqFwd: 39.17, reqAft: 8.86 }];
     let userOff = parseFloat(document.getElementById('manualOffset').value) || 0;
 
@@ -510,9 +548,6 @@
             if (mooringSide === 'Stuurboord (SB)') { baseReqFwd = arm.reqFwd; baseReqAft = arm.reqAft; } 
             else { baseReqFwd = arm.reqAft; baseReqAft = arm.reqFwd; } 
             
-            // Oplossing berekening: Positieve offset = Manifold is FWD van CM. 
-            // Dit betekent we hebben MINDER beschikbare FWD lengte vanaf de laadarm gemeten, 
-            // dus de BENODIGDE FWD afstand tov de CM moet omhoog.
             let effReqFwd = baseReqFwd + userOff;
             let effReqAft = baseReqAft - userOff;
 
