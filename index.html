@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.19 - Perfect Compact PDF Fit</title>
+  <title>ShipFit 7.20 - Guaranteed 1-Page Fit</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -77,16 +77,18 @@
     .print-rotate-container { width: 100%; }
     .mooring-form-print { display: none; } 
 
-    /* PRINT STYLES - EXTREEM COMPACT, ALLES OP 1 PAGINA */
+    /* PRINT STYLES - STRIKT GEFORCEERDE HOOGTES */
     @media print {
       @page { margin: 0.5cm; size: A4 portrait; }
-      body { background: white; font-size: 11px; }
+      html, body { width: 100%; height: 100%; margin: 0; padding: 0; background: white; font-size: 11px; }
+      
       .container { width: 100%; max-width: 100%; margin: 0; padding: 0; box-shadow: none; }
       header { padding: 10px 0; margin-bottom: 15px; }
       header img { height: 40px; }
       header h1 { font-size: 1.4rem; }
       .buttons, .upload-section { display: none !important; }
       hr { display: none; }
+      
       .row-flex { gap: 10px; margin-bottom: 5px; display: grid; grid-template-columns: repeat(3, 1fr); }
       .row-flex:first-of-type { grid-template-columns: 1fr 1fr; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
       .form-group label { font-size: 0.75rem; margin-bottom: 0; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -101,47 +103,55 @@
       
       body[data-print-mode="report"] #plot-container { display: block !important; border: none; padding: 0; margin: 0; }
       
+      /* Veiligere hoogte zodat het zéker op A4 past (A4 is 29.7cm hoog) */
       body[data-print-mode="report"] .plot-wrapper { 
-          page-break-after: always; position: relative; height: 28.5cm; width: 100%; margin: 0; overflow: hidden;
+          page-break-after: always; 
+          page-break-inside: avoid;
+          position: relative; 
+          height: 27cm; 
+          width: 100%; 
+          margin: 0; 
+          overflow: hidden;
       }
       body[data-print-mode="report"] .plot-wrapper:last-child { page-break-after: auto; }
       
-      /* Container draait 90 graden en gebruikt flexbox voor perfecte centrering */
+      /* Het gedraaide blok in het midden */
       body[data-print-mode="report"] .print-rotate-container {
-          position: absolute; top: 50%; left: 50%;
+          position: absolute; 
+          top: 50%; left: 50%;
           transform: translate(-50%, -50%) rotate(90deg);
-          width: 28cm; height: 19.5cm; 
+          width: 26cm; 
+          height: 19cm; 
           display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px;
       }
 
-      /* Titel van de tekening compact */
       body[data-print-mode="report"] .plot-label {
-          position: relative !important; text-align: center; font-size: 14px; color: #000; margin-bottom: 0px; font-weight: bold;
+          position: relative !important; text-align: center; font-size: 12px; color: #000; margin-bottom: 0px; font-weight: bold;
       }
 
-      /* Tekening strak begrensd zodat de zijkanten niet weglopen */
+      /* Tekening kleiner gemaakt (20cm) zodat de hele container zéker niet te groot wordt */
       body[data-print-mode="report"] canvas { 
           position: relative !important; transform: none !important;
-          width: 24cm !important; max-width: 100% !important; height: auto !important; border: none; object-fit: contain;
+          width: 20cm !important; max-width: 100% !important; height: auto !important; border: none; object-fit: contain;
       }
 
-      /* Formulier styling nog kleiner gemaakt */
+      /* Zeer strak gestijld formulier */
       .mooring-form-print { 
           display: flex; flex-direction: column; align-items: center; width: 100%; color: #000; font-family: Arial, sans-serif; box-sizing: border-box;
       }
-      .mf-top-table { border-collapse: collapse; width: 100%; max-width: 300px; border: 1px solid #000; font-size: 9px; margin-bottom: 2px; }
+      .mf-top-table { border-collapse: collapse; width: 100%; max-width: 300px; border: 1px solid #000; font-size: 8px; margin-bottom: 2px; }
       .mf-top-table td { border: 1px solid #000; padding: 2px 4px; height: 12px; }
       .mf-top-table .mf-lbl { background: #eee; width: 90px; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .mf-top-table .mf-noborder { border: none !important; }
       
-      .mooring-form-print h2 { font-size: 13px; margin: 3px 0; font-family: Arial, sans-serif; text-align: center; font-weight: bold; }
+      .mooring-form-print h2 { font-size: 11px; margin: 3px 0; font-family: Arial, sans-serif; text-align: center; font-weight: bold; }
       
-      .mf-main-table { border-collapse: collapse; width: 85%; border: 1px solid #000; font-size: 9px; }
-      .mf-main-table th, .mf-main-table td { border: 1px solid #000; padding: 2px 4px; vertical-align: middle; text-align: left; height: 14px; }
-      .mf-main-table th { text-align: center; font-weight: bold; font-size: 10px; background: #f9f9f9; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .mf-double-line { border-top: 3px double #000; }
+      .mf-main-table { border-collapse: collapse; width: 85%; border: 1px solid #000; font-size: 8px; }
+      .mf-main-table th, .mf-main-table td { border: 1px solid #000; padding: 2px 4px; vertical-align: middle; text-align: left; height: 12px; line-height: 1.1; }
+      .mf-main-table th { text-align: center; font-weight: bold; font-size: 9px; background: #f9f9f9; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .mf-double-line { border-top: 2px double #000; }
       
-      .mooring-form-print p { font-size: 9px; margin-top: 4px; margin-bottom: 0; text-align: center; }
+      .mooring-form-print p { font-size: 8px; margin-top: 3px; margin-bottom: 0; text-align: center; }
       
       body[data-print-mode="simple"] #plot-container { display: none !important; }
     }
@@ -151,7 +161,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 7.19</h1>
+    <h1>ShipFit 7.20</h1>
   </header>
 
   <div class="container">
@@ -226,7 +236,7 @@
                 <table class="mf-top-table">
                     <tr>
                         <td class="mf-lbl">Date</td>
-                        <td style="width: 180px;"></td>
+                        <td style="width: 150px;"></td>
                         <td class="mf-noborder"></td>
                     </tr>
                     <tr>
@@ -501,8 +511,6 @@
     
     // Positieve offset = Manifold is FWD van CM.
     let shiftX = (side === 'SB') ? userOff : -userOff;
-    
-    const steigerCmX = midX; // Vaste rode lijn op de steiger (verwijderd op aanvraag van gebruiker, alleen CM op schip)
     
     const armX = midX + (manifoldOffset * scale); // Groene lijn (vaste positie op laadarm)
     const shipZeroX = armX + (shiftX * scale);    // Rode lijn (CM van het schip)
