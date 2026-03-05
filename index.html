@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.22 - Perfect Page Fill & Alignment</title>
+  <title>ShipFit 7.22 - Perfect Page Layout & Lines</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -13,6 +13,7 @@
     header { background: var(--primary); color: white; padding: 15px 0; text-align: center; display: flex; justify-content: center; align-items: center; gap: 15px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     header img { height: 50px; background: white; padding: 4px; border-radius: 4px; }
     header h1 { font-size: 1.8rem; margin: 0; }
+    
     .container { max-width: 950px; margin: 30px auto; background: var(--surface); padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     
     .upload-section { background: #e3f2fd; border: 2px dashed #90caf9; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 30px; }
@@ -63,117 +64,94 @@
     .mooring-line { display: flex; justify-content: space-between; border-bottom: 1px dashed #eee; padding: 4px 0; }
     .mooring-line:last-child { border-bottom: none; }
 
-    #plot-container {
-      margin-top: 30px;
-      border: 1px solid #ccc;
-      background: white;
-      border-radius: 4px;
-      padding: 20px;
+    /* === SCREEN VIEW VOOR PLOTS === */
+    @media screen {
+        #plot-container {
+            max-width: 950px; margin: 30px auto; background: var(--surface); padding: 30px; 
+            border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #ccc;
+        }
+        .print-page { margin-bottom: 40px; }
+        .print-landscape-container { display: flex; flex-direction: column; align-items: center; }
+        .mooring-form-print { display: none; }
+        
+        .plot-label { order: 1; text-align: center; font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; color: #1565c0; }
+        canvas { order: 2; display: block; margin: 0 auto; border-bottom: 1px solid #eee; max-width: 100%; height: auto; }
     }
-    .plot-wrapper { margin-bottom: 40px; }
-    .plot-label { text-align: center; font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; color: #1565c0; }
-    canvas { display: block; margin: 0 auto; border-bottom: 1px solid #eee; }
 
-    .print-rotate-container { width: 100%; }
-    .mooring-form-print { display: none; } 
-
-    /* === PDF PRINT STYLES === */
+    /* === PDF PRINT STYLES - STRIKT GEFORCEERDE 1-PAGINA LAYOUT === */
     @media print {
-      @page { margin: 0.5cm; size: A4 portrait; }
-      html, body { width: 100%; height: 100%; margin: 0; padding: 0; background: white; font-size: 11px; }
+      @page { margin: 0; size: A4 portrait; }
+      html, body { width: 210mm; height: 297mm; margin: 0; padding: 0; background: white; font-family: Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       
-      .container { width: 100%; max-width: 100%; margin: 0; padding: 0; box-shadow: none; }
-      header { padding: 10px 0; margin-bottom: 15px; }
-      header img { height: 40px; }
-      header h1 { font-size: 1.4rem; }
-      .buttons, .upload-section { display: none !important; }
-      hr { display: none; }
+      header, .upload-section, .buttons, hr { display: none !important; }
+      
+      /* Pagina 1: Data Formulier & Controles */
+      .container { 
+          width: 210mm !important; max-width: 210mm !important; margin: 0 !important; padding: 15mm !important; 
+          box-shadow: none !important; box-sizing: border-box !important; page-break-after: always; 
+      }
       
       .row-flex { gap: 10px; margin-bottom: 5px; display: grid; grid-template-columns: repeat(3, 1fr); }
       .row-flex:first-of-type { grid-template-columns: 1fr 1fr; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
-      .form-group label { font-size: 0.75rem; margin-bottom: 0; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
-      .form-group input { border: none !important; background: transparent !important; padding: 0 !important; font-weight: bold; font-size: 0.95rem; color: #000; height: auto; }
-      .section-title { margin-top: 15px; margin-bottom: 5px; font-size: 1rem; border-color: #ccc; }
-      .result-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-      .result-item { padding: 4px 8px; font-size: 0.8rem; border-width: 1px; }
-      .arm-block { min-height: 50px; padding: 5px; border: 1px solid #ccc; }
-      .tug-svg { width: 50px; }
+      .form-group label { font-size: 10px; margin-bottom: 0; color: #888; text-transform: uppercase; }
+      .form-group input { border: none !important; background: transparent !important; padding: 0 !important; font-weight: bold; font-size: 12px; color: #000; height: auto; }
+      .section-title { margin-top: 15px; margin-bottom: 5px; font-size: 12px; border-bottom: 1px solid #ccc; }
+      .result-grid { grid-template-columns: repeat(3, 1fr); gap: 5px; }
+      .result-item { padding: 4px 6px; font-size: 10px; border-width: 1px; }
+      .arm-block { min-height: 40px; padding: 4px; border: 1px solid #ccc; }
+      .tug-svg { width: 45px; }
       .mooring-box { padding: 5px; border: 1px solid #ccc; }
-      .tug-note { background: #fff8e1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       
-      body[data-print-mode="report"] #plot-container { display: block !important; border: none; padding: 0; margin: 0; }
+      /* Verberg plot container tenzij in report modus */
+      body[data-print-mode="simple"] #plot-container { display: none !important; }
       
-      body[data-print-mode="report"] .plot-wrapper { 
-          page-break-after: always; 
-          page-break-inside: avoid;
-          position: relative; 
-          height: 28.5cm; /* Maximale portret hoogte */
-          width: 100%; 
-          margin: 0; 
-          overflow: hidden;
+      /* Setup voor de Canvas Pagina's */
+      body[data-print-mode="report"] #plot-container { 
+          display: block !important; padding: 0 !important; margin: 0 !important; border: none !important; box-shadow: none !important; 
       }
-      body[data-print-mode="report"] .plot-wrapper:last-child { page-break-after: auto; }
       
-      /* De container draait alles en gebruikt Flexbox om de elementen perfect te verdelen zonder overlap */
-      body[data-print-mode="report"] .print-rotate-container {
+      .print-page { 
+          width: 210mm; height: 297mm; position: relative; overflow: hidden; background: white; page-break-after: always; 
+      }
+      .print-page:last-child { page-break-after: auto; }
+      
+      /* De container draait 90 graden en gebruikt Flexbox om de elementen perfect uit te lijnen */
+      .print-landscape-container {
           position: absolute; 
-          top: 50%; left: 50%;
+          top: 148.5mm; left: 105mm; /* Exact in het midden van de A4 */
+          width: 277mm; height: 190mm; /* Maximale afmeting binnen marges */
           transform: translate(-50%, -50%) rotate(90deg);
-          width: 27.5cm; /* Pagina vullend in de breedte (landscape) */
-          height: 19cm;  /* Pagina vullend in de hoogte (landscape) */
-          display: flex; 
-          flex-direction: column; 
-          justify-content: space-between; /* Drukt form naar top, canvas in midden, titel naar onder */
-          align-items: center; 
+          display: flex; flex-direction: column; justify-content: space-between; align-items: center;
       }
 
       /* 1. HET FORMULIER (Bovenaan) */
-      .mooring-form-print { 
-          display: flex; flex-direction: column; align-items: center; width: 100%; color: #000; font-family: Arial, sans-serif; box-sizing: border-box;
-          order: 1;
-          transform: none !important; /* Verwijderd om overlap te voorkomen */
-      }
-      .mf-top-table { border-collapse: collapse; width: 100%; max-width: 450px; border: 1px solid #000; font-size: 11px; margin-bottom: 5px; }
-      .mf-top-table td { border: 1px solid #000; padding: 4px 6px; height: 16px; }
-      .mf-top-table .mf-lbl { background: #eee; width: 110px; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .mooring-form-print { display: block; width: 100%; color: #000; font-family: Arial, sans-serif; order: 1; }
+      
+      .mf-top-table { border-collapse: collapse; width: 100%; max-width: 450px; font-size: 12px; margin-bottom: 8px; }
+      .mf-top-table td { border: 1px solid #000; padding: 4px 8px; height: 18px; }
+      .mf-top-table .mf-lbl { background: #eee; width: 120px; font-weight: bold; }
       .mf-top-table .mf-noborder { border: none !important; }
       
-      .mooring-form-print h2 { font-size: 15px; margin: 4px 0; font-family: Arial, sans-serif; text-align: center; font-weight: bold; }
+      .mooring-form-print h2 { font-size: 16px; margin: 8px 0; text-align: center; font-weight: bold; }
       
-      .mf-main-table { border-collapse: collapse; width: 95%; border: 1px solid #000; font-size: 10px; }
-      .mf-main-table th, .mf-main-table td { border: 1px solid #000; padding: 4px 6px; vertical-align: middle; text-align: left; height: 16px; line-height: 1.2; }
-      .mf-main-table th { text-align: center; font-weight: bold; font-size: 11px; background: #f9f9f9; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .mf-main-table { border-collapse: collapse; width: 100%; border: 1px solid #000; font-size: 10px; line-height: 1.2; }
+      .mf-main-table th, .mf-main-table td { border: 1px solid #000; padding: 4px 6px; vertical-align: middle; text-align: left; }
+      .mf-main-table th { text-align: center; font-weight: bold; font-size: 11px; background: #f9f9f9; }
       .mf-double-line { border-top: 3px double #000; }
       
-      .mooring-form-print p { font-size: 10px; margin-top: 5px; margin-bottom: 0; text-align: center; }
+      .mooring-form-print p { font-size: 11px; margin-top: 8px; margin-bottom: 0; text-align: center; }
 
-      /* 2. DE TEKENING (In het midden, zo groot mogelijk) */
-      body[data-print-mode="report"] canvas { 
-          position: relative !important; 
-          transform: none !important; /* Verwijderd om overlap te voorkomen */
-          width: 26cm !important; 
-          max-width: 100% !important; 
-          height: auto !important; 
-          border: none; 
-          object-fit: contain;
-          order: 2;
+      /* 2. DE TEKENING (In het midden) */
+      .print-landscape-container canvas { 
+          width: 100% !important; max-width: 100% !important; height: auto !important; max-height: 110mm !important; 
+          border: none; object-fit: contain; margin: 0 auto; order: 2;
       }
 
       /* 3. DE TITEL (Onderaan, geheel links) */
-      body[data-print-mode="report"] .plot-label {
-          position: relative !important; 
-          text-align: left; 
-          font-size: 14px; 
-          color: #000; 
-          margin: 0; 
-          font-weight: bold;
-          width: 100%;
-          padding-left: 1cm; /* Zorgt dat het niet helemaal tegen de rand plakt */
-          order: 3; 
-          transform: none !important;
+      .print-landscape-container .plot-label {
+          width: 100%; text-align: left; font-size: 16px; font-weight: bold; color: #000; 
+          padding-left: 5mm; margin-bottom: 2mm; margin-top: 0; order: 3;
       }
-      
-      body[data-print-mode="simple"] #plot-container { display: none !important; }
     }
   </style>
 </head>
@@ -246,86 +224,83 @@
     </form>
     
     <div id="resultaten"></div>
+  </div> <div id="plot-container" style="display:none;">
     
-    <div id="plot-container" style="display:none;">
-      
-      <div id="sb-page" class="plot-wrapper">
-        <div class="print-rotate-container">
-            
-            <div class="mooring-form-print">
-                <table class="mf-top-table">
-                    <tr>
-                        <td class="mf-lbl">Date</td>
-                        <td style="width: 180px;"></td>
-                        <td class="mf-noborder"></td>
-                    </tr>
-                    <tr>
-                        <td class="mf-lbl">Name of Vessel</td>
-                        <td id="pf-shipname"></td>
-                        <td style="border-left: 4px solid #000;"></td>
-                    </tr>
-                    <tr>
-                        <td class="mf-lbl">Name of Master</td>
-                        <td colspan="2"></td>
-                    </tr>
-                </table>
+    <div id="sb-page" class="print-page">
+      <div class="print-landscape-container">
+          
+          <div class="mooring-form-print">
+              <table class="mf-top-table">
+                  <tr>
+                      <td class="mf-lbl">Date</td>
+                      <td style="width: 200px;"></td>
+                      <td class="mf-noborder"></td>
+                  </tr>
+                  <tr>
+                      <td class="mf-lbl">Name of Vessel</td>
+                      <td id="pf-shipname"></td>
+                      <td style="border-left: 4px solid #000;"></td>
+                  </tr>
+                  <tr>
+                      <td class="mf-lbl">Name of Master</td>
+                      <td colspan="2"></td>
+                  </tr>
+              </table>
 
-                <h2>Mooring Information</h2>
+              <h2>Mooring Information</h2>
 
-                <table class="mf-main-table">
-                    <tr><th colspan="6">Mooring</th></tr>
-                    <tr class="mf-double-line">
-                        <td style="width:16%">Spring lines FWD</td>
-                        <td style="width:23%">Wire / Poly /<br>HMPE / ........</td>
-                        <td style="width:11%">Winch <span style="color:red; font-weight:bold;">only</span></td>
-                        <td style="width:16%">Spring lines AFT</td>
-                        <td style="width:23%">Wire / Poly /<br>HMPE / ........</td>
-                        <td style="width:11%">Winch <span style="color:red; font-weight:bold;">only</span></td>
-                    </tr>
-                    <tr>
-                        <td rowspan="2">Breast lines FWD</td>
-                        <td>Wire / Poly /<br>HMPE / ........</td>
-                        <td>Winch / Bollard</td>
-                        <td rowspan="2">Breast lines AFT</td>
-                        <td>Wire / Poly /<br>HMPE / ........</td>
-                        <td>Winch / Bollard</td>
-                    </tr>
-                    <tr>
-                        <td>Wire / Poly /<br>HMPE / ........</td>
-                        <td>Winch / Bollard</td>
-                        <td>Wire / Poly /<br>HMPE / ........</td>
-                        <td>Winch / Bollard</td>
-                    </tr>
-                    <tr>
-                        <td rowspan="2">Lines FWD</td>
-                        <td>Wire / Poly /<br>HMPE</td>
-                        <td>Winch / Bollard</td>
-                        <td rowspan="2">Lines AFT</td>
-                        <td>Wire / Poly /<br>HMPE</td>
-                        <td>Winch / Bollard</td>
-                    </tr>
-                    <tr>
-                        <td>Wire / Poly /<br>HMPE / ........</td>
-                        <td>Winch / Bollard</td>
-                        <td>Wire / Poly /<br>HMPE / ........</td>
-                        <td>Winch / Bollard</td>
-                    </tr>
-                </table>
-                <p>Plot your vessel <strong>Port and Starboard</strong> side in below diagram and return to your agent soonest.</p>
-            </div>
+              <table class="mf-main-table">
+                  <tr><th colspan="6">Mooring</th></tr>
+                  <tr class="mf-double-line">
+                      <td style="width:16%">Spring lines FWD</td>
+                      <td style="width:23%">Wire / Poly /<br>HMPE / ........</td>
+                      <td style="width:11%">Winch <span style="color:red; font-weight:bold;">only</span></td>
+                      <td style="width:16%">Spring lines AFT</td>
+                      <td style="width:23%">Wire / Poly /<br>HMPE / ........</td>
+                      <td style="width:11%">Winch <span style="color:red; font-weight:bold;">only</span></td>
+                  </tr>
+                  <tr>
+                      <td rowspan="2">Breast lines FWD</td>
+                      <td>Wire / Poly /<br>HMPE / ........</td>
+                      <td>Winch / Bollard</td>
+                      <td rowspan="2">Breast lines AFT</td>
+                      <td>Wire / Poly /<br>HMPE / ........</td>
+                      <td>Winch / Bollard</td>
+                  </tr>
+                  <tr>
+                      <td>Wire / Poly /<br>HMPE / ........</td>
+                      <td>Winch / Bollard</td>
+                      <td>Wire / Poly /<br>HMPE / ........</td>
+                      <td>Winch / Bollard</td>
+                  </tr>
+                  <tr>
+                      <td rowspan="2">Lines FWD</td>
+                      <td>Wire / Poly /<br>HMPE</td>
+                      <td>Winch / Bollard</td>
+                      <td rowspan="2">Lines AFT</td>
+                      <td>Wire / Poly /<br>HMPE</td>
+                      <td>Winch / Bollard</td>
+                  </tr>
+                  <tr>
+                      <td>Wire / Poly /<br>HMPE / ........</td>
+                      <td>Winch / Bollard</td>
+                      <td>Wire / Poly /<br>HMPE / ........</td>
+                      <td>Winch / Bollard</td>
+                  </tr>
+              </table>
+              <p>Plot your vessel <strong>Port and Starboard</strong> side in below diagram and return to your agent soonest.</p>
+          </div>
 
-            <div class="plot-label">Stuurboord (SB) Berthing</div>
-            <canvas id="canvasSB" width="950" height="350"></canvas>
-        </div>
+          <canvas id="canvasSB" width="950" height="350"></canvas>
+          <div class="plot-label">Stuurboord (SB) Berthing</div>
       </div>
+    </div>
 
-      <div id="ps-page" class="plot-wrapper">
-        <div class="print-rotate-container">
-            <div class="plot-label">Bakboord (PS) Berthing</div>
-            <canvas id="canvasPS" width="950" height="350"></canvas>
-        </div>
+    <div id="ps-page" class="print-page">
+      <div class="print-landscape-container" style="justify-content: center;">
+          <canvas id="canvasPS" width="950" height="350"></canvas>
+          <div class="plot-label" style="margin-top: 15px;">Bakboord (PS) Berthing</div>
       </div>
-
     </div>
 
   </div>
@@ -529,11 +504,13 @@
     // --- SCHIP TEKENEN MET OFFSET ---
     let userOff = parseFloat(document.getElementById('manualOffset').value) || 0;
     
-    // Positieve offset = Manifold is FWD van CM.
     let shiftX = (side === 'SB') ? userOff : -userOff;
     
-    const armX = midX + (manifoldOffset * scale); // Groene lijn (vaste positie op laadarm)
-    const shipZeroX = armX + (shiftX * scale);    // Rode lijn (CM van het schip)
+    // Groene Lijn (Manifold) staat ALTIJD vast op de laadarm
+    const armX = midX + (manifoldOffset * scale); 
+    
+    // Rode Lijn (CM) is het fysieke midden van het schip. Verschuift mee bij Offset.
+    const shipZeroX = armX + (shiftX * scale);    
     
     const beamVal = parseFloat(document.getElementById('beam').value) || 32; 
     const bowToCmVal = parseFloat(document.getElementById('bowToCm').value) || (fwd + 20);
@@ -584,29 +561,30 @@
         ctx.closePath(); ctx.fill(); ctx.stroke();
     }
 
-    // 1. Rode Lijn: CM (Vaste plek op het schip, verschuift met de boot mee als de offset verandert)
+    // 1. Rode Lijn: CM (Schip). Tekst staat boven het schip.
     ctx.beginPath(); ctx.moveTo(shipZeroX, shipTopY); ctx.lineTo(shipZeroX, shipBotY);
     ctx.strokeStyle = '#d32f2f'; ctx.setLineDash([5, 3]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = '#d32f2f'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'left'; 
-    ctx.fillText("CM", shipZeroX + 5, shipCenterY - 12); 
+    ctx.fillStyle = '#d32f2f'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; 
+    ctx.fillText("CM", shipZeroX, shipTopY - 5); 
 
-    // 2. Groene Lijn: Manifold (De plek op het schip die aansluit op de laadarm. Blijft dus op de arm staan)
+    // 2. Groene Lijn: Manifold (Arm). Tekst staat onder het schip.
     ctx.beginPath(); ctx.moveTo(armX, shipTopY); ctx.lineTo(armX, shipBotY);
     ctx.strokeStyle = '#00c853'; ctx.setLineDash([5, 3]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = '#00c853'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'left'; 
-    ctx.fillText("Manifold", armX + 5, shipCenterY + 12); 
+    ctx.fillStyle = '#00c853'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; 
+    ctx.fillText("Manifold", armX, shipBotY + 15); 
 
+    // De oranje PB lijn
     const pbLen = parseFloat(document.getElementById('pbTotal').value) || 0;
     if(pbLen > 0) {
         ctx.beginPath(); 
-        ctx.moveTo(pbStartX, shipBotY + 15); 
-        ctx.lineTo(pbEndX, shipBotY + 15);
+        ctx.moveTo(pbStartX, shipBotY + 25); 
+        ctx.lineTo(pbEndX, shipBotY + 25);
         ctx.strokeStyle = '#e65100'; ctx.lineWidth = 4; ctx.stroke();
         ctx.fillStyle = '#e65100'; ctx.textAlign = 'center'; 
-        ctx.fillText(`PB: ${pbLen}m`, (pbStartX + pbEndX) / 2, shipBotY + 28);
+        ctx.fillText(`PB: ${pbLen}m`, (pbStartX + pbEndX) / 2, shipBotY + 38);
     }
 
-    const rulerY = height - 40;
+    const rulerY = height - 25; // Iets lager gezet zodat het niet overlapt met PB tekst
     ctx.beginPath(); ctx.moveTo(20, rulerY); ctx.lineTo(width - 20, rulerY); ctx.strokeStyle = '#333'; ctx.lineWidth = 1; ctx.stroke();
     ctx.beginPath(); ctx.moveTo(midX, rulerY - 5); ctx.lineTo(midX, rulerY + 5); ctx.stroke(); ctx.fillStyle = '#000'; ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.fillText("0", midX - 3, rulerY + 15);
     ctx.font = '9px Arial'; for(let m = 10; m <= 190; m += 10) { let px = m * scale; if(midX + px < width - 10) { ctx.beginPath(); ctx.moveTo(midX + px, rulerY - 3); ctx.lineTo(midX + px, rulerY + 3); ctx.stroke(); if(m % 20 === 0) ctx.fillText(m, midX + px - 6, rulerY + 15); } if(midX - px > 10) { ctx.beginPath(); ctx.moveTo(midX - px, rulerY - 3); ctx.lineTo(midX - px, rulerY + 3); ctx.stroke(); if(m % 20 === 0) ctx.fillText("-" + m, midX - px - 10, rulerY + 15); }}
