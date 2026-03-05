@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShipFit 7.17 - Mooring Formulier in PDF</title>
+  <title>ShipFit 7.18 - Perfect Layout & Lines</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
@@ -75,9 +75,9 @@
     canvas { display: block; margin: 0 auto; border-bottom: 1px solid #eee; }
 
     .print-rotate-container { width: 100%; }
-    .mooring-form-print { display: none; } /* Onzichtbaar op beeldscherm */
+    .mooring-form-print { display: none; } 
 
-    /* PRINT STYLES - Rotatie en Formulier integratie */
+    /* PRINT STYLES - COMPACTE FORMULIER & ROTATIE */
     @media print {
       @page { margin: 0.5cm; size: A4 portrait; }
       body { background: white; font-size: 11px; }
@@ -102,11 +102,11 @@
       body[data-print-mode="report"] #plot-container { display: block !important; border: none; padding: 0; margin: 0; }
       
       body[data-print-mode="report"] .plot-wrapper { 
-          page-break-after: always; position: relative; height: 27cm; width: 100%; margin: 0; overflow: hidden;
+          page-break-after: always; position: relative; height: 28cm; width: 100%; margin: 0; overflow: hidden;
       }
       body[data-print-mode="report"] .plot-wrapper:last-child { page-break-after: auto; }
       
-      /* De container draait alles 90 graden mee (Formulier én canvas) */
+      /* De container draait alles 90 graden mee */
       body[data-print-mode="report"] .print-rotate-container {
           position: absolute; top: 50%; left: 50%;
           transform: translate(-50%, -50%) rotate(90deg);
@@ -117,27 +117,31 @@
       body[data-print-mode="report"] .ps-center { justify-content: center; }
 
       body[data-print-mode="report"] .plot-label {
-          position: relative !important; text-align: center; font-size: 1.2rem; color: #000; margin-bottom: 10px;
+          position: relative !important; text-align: center; font-size: 1.1rem; color: #000; margin-bottom: 5px;
       }
 
       body[data-print-mode="report"] canvas { 
           position: relative !important; transform: none !important;
-          width: 100% !important; max-width: none !important; height: auto !important; border: none;
+          width: 25cm !important; max-width: none !important; height: auto !important; border: none;
       }
 
-      /* Stijlen voor het print-formulier */
+      /* COMPACTE Stijlen voor het print-formulier zodat het past */
       .mooring-form-print { 
-          display: block; width: 100%; color: #000; font-family: Arial, sans-serif; margin-bottom: 15px; box-sizing: border-box; padding: 0 10px;
+          display: block; width: 100%; color: #000; font-family: Arial, sans-serif; margin-bottom: 5px; box-sizing: border-box; padding: 0 10px;
       }
-      .mf-top-table { border-collapse: collapse; width: 100%; max-width: 600px; border: 1px solid #000; font-size: 0.85rem; }
-      .mf-top-table td { border: 1px solid #000; padding: 4px 8px; height: 22px; }
-      .mf-top-table .mf-lbl { background: #eee; width: 120px; font-weight: normal; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .mf-top-table { border-collapse: collapse; width: 100%; max-width: 450px; border: 1px solid #000; font-size: 0.75rem; }
+      .mf-top-table td { border: 1px solid #000; padding: 2px 6px; height: 18px; }
+      .mf-top-table .mf-lbl { background: #eee; width: 110px; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .mf-top-table .mf-noborder { border: none !important; }
       
-      .mf-main-table { border-collapse: collapse; width: 100%; border: 1px solid #000; font-size: 0.8rem; }
-      .mf-main-table th, .mf-main-table td { border: 1px solid #000; padding: 5px 8px; vertical-align: middle; text-align: left; height: 24px; }
-      .mf-main-table th { text-align: center; font-weight: normal; font-size: 0.85rem; }
+      .mooring-form-print h2 { font-size: 0.95rem; margin: 10px 0 5px 0; font-family: Arial, sans-serif; }
+      
+      .mf-main-table { border-collapse: collapse; width: 100%; border: 1px solid #000; font-size: 0.7rem; }
+      .mf-main-table th, .mf-main-table td { border: 1px solid #000; padding: 3px 5px; vertical-align: middle; text-align: left; height: 20px; }
+      .mf-main-table th { text-align: center; font-weight: bold; font-size: 0.75rem; }
       .mf-double-line { border-top: 3px double #000; }
+      
+      .mooring-form-print p { font-size: 0.75rem; margin-top: 6px; text-align: center; }
       
       body[data-print-mode="simple"] #plot-container { display: none !important; }
     }
@@ -147,7 +151,7 @@
 
   <header>
     <img src="zrlogo.png" alt="Logo" onerror="this.style.display='none'">
-    <h1>ShipFit 7.17</h1>
+    <h1>ShipFit 7.18</h1>
   </header>
 
   <div class="container">
@@ -222,7 +226,7 @@
                 <table class="mf-top-table">
                     <tr>
                         <td class="mf-lbl">Date</td>
-                        <td style="width: 200px;"></td>
+                        <td style="width: 180px;"></td>
                         <td class="mf-noborder"></td>
                     </tr>
                     <tr>
@@ -236,7 +240,7 @@
                     </tr>
                 </table>
 
-                <h2 style="font-size: 1.1rem; margin: 15px 0 5px 0; font-family: Arial, sans-serif;">Mooring Information</h2>
+                <h2>Mooring Information</h2>
 
                 <table class="mf-main-table">
                     <tr><th colspan="6" style="background:#f9f9f9;">Mooring</th></tr>
@@ -277,9 +281,9 @@
                         <td>Winch / Bollard</td>
                     </tr>
                 </table>
-
-                <p style="text-align: center; margin-top: 10px; font-size: 0.85rem;">Plot your vessel <strong>Port and Starboard</strong> side in below diagram and return to your agent soonest.</p>
+                <p>Plot your vessel <strong>Port and Starboard</strong> side in below diagram and return to your agent soonest.</p>
             </div>
+
             <div class="plot-label">Stuurboord (SB) Berthing</div>
             <canvas id="canvasSB" width="950" height="350"></canvas>
         </div>
@@ -408,7 +412,7 @@
       } 
   }
   function resetForm() { if(confirm("Weet je zeker dat je alles wilt wissen?")) { clearFieldsSilent(); } }
-  
+
   // --- DRAWING ENGINE ---
   function drawJettyScene(ctx, fwd, aft, side, manifoldOffset, selectedArmId) {
     const width = ctx.canvas.width; const height = ctx.canvas.height;
@@ -494,11 +498,8 @@
 
     // --- SCHIP TEKENEN MET OFFSET ---
     let userOff = parseFloat(document.getElementById('manualOffset').value) || 0;
-    
-    // Positieve offset = Manifold is FWD van CM.
     let shiftX = (side === 'SB') ? userOff : -userOff;
     
-    const steigerCmX = midX; // Vaste rode lijn op de steiger 
     const armX = midX + (manifoldOffset * scale); // Groene lijn (vaste positie op laadarm)
     const shipZeroX = armX + (shiftX * scale);    // Rode lijn (CM van het schip)
     
@@ -551,19 +552,13 @@
         ctx.closePath(); ctx.fill(); ctx.stroke();
     }
 
-    // 1. Rode Lijn: Steiger CM
-    ctx.beginPath(); ctx.moveTo(steigerCmX, shipTopY); ctx.lineTo(steigerCmX, shipBotY);
-    ctx.strokeStyle = '#d32f2f'; ctx.setLineDash([5, 3]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = '#d32f2f'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'left'; 
-    ctx.fillText("Steiger CM", steigerCmX + 5, shipCenterY - 12); 
-
-    // 2. Rode Lijn: CM (Schip)
+    // 1. Rode Lijn: CM (Vaste plek op het schip, verschuift met de boot mee als de offset verandert)
     ctx.beginPath(); ctx.moveTo(shipZeroX, shipTopY); ctx.lineTo(shipZeroX, shipBotY);
     ctx.strokeStyle = '#d32f2f'; ctx.setLineDash([5, 3]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = '#d32f2f'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'left'; 
-    ctx.fillText("CM", shipZeroX + 5, shipCenterY - 24); 
+    ctx.fillText("CM", shipZeroX + 5, shipCenterY - 12); 
 
-    // 3. Groene Lijn: Manifold (Laadarm)
+    // 2. Groene Lijn: Manifold (De plek op het schip die aansluit op de laadarm. Blijft dus op de arm staan)
     ctx.beginPath(); ctx.moveTo(armX, shipTopY); ctx.lineTo(armX, shipBotY);
     ctx.strokeStyle = '#00c853'; ctx.setLineDash([5, 3]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = '#00c853'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'left'; 
@@ -668,7 +663,6 @@
           const armId = selected.value; const offset = armPositions[armId];
           drawDualPlots(fwd, aft, offset, armId);
           
-          // Kopieer de naam van het schip naar het print-formulier
           const shipNameEl = document.getElementById('pf-shipname');
           if (shipNameEl) {
               shipNameEl.innerText = document.getElementById('shipName').value || "";
